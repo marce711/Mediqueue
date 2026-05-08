@@ -1,0 +1,332 @@
+version: '3.8'
+
+networks:
+  mediqueue-net:
+    driver: bridge
+
+volumes:
+  postgres_paciente_data:
+  postgres_doctor_data:
+  postgres_cita_data:
+  postgres_pago_data:
+  redis_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+
+services:
+
+  api-gateway:
+    image: nginx:alpine
+    container_name: mediqueue-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./api-gateway/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - pacienteService
+      - doctorHorario
+      - citaService
+      - pagoService
+      - notificacionService
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  postgres-paciente:
+    image: postgres:15-alpine
+    container_name: mediqueuePacienteDB
+    environment:
+      POSTGRES_DB: patienteDB
+      POSTGRES_USER: mediqueue
+      POSTGRES_PASSWORD: mediqueue123
+    volumes:
+      - postgres_paciente_data:/var/lib/postgresql/data
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mediqueue -d patient_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-doctor:
+    image: postgres:15-alpine
+    container_name: mediqueueDoctorDB
+    environment:
+      POSTGRES_DB: doctorDB
+      POSTGRES_USER: mediqueue
+      POSTGRES_PASSWORD: mediqueue123
+    volumes:
+      - postgres_doctor_data:/var/lib/postgresql/data
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mediqueue -d doctor_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-cita:
+    image: postgres:15-alpine
+    container_name: mediqueueCitaDB
+    environment:
+      POSTGRES_DB: citaDB
+      POSTGRES_USER: mediqueue
+      POSTGRES_PASSWORD: mediqueue123
+    volumes:
+      - postgres_cita_data:/var/lib/postgresql/data
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mediqueue -d appointment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-pago:
+    image: postgres:15-alpine
+    container_name: mediqueuePagoDB
+    environment:
+      POSTGRES_DB: pagoDB
+      POSTGRES_USER: mediqueue
+      POSTGRES_PASSWORD: mediqueue123
+    volumes:
+      - postgres_pago_data:/var/lib/postgresql/data
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mediqueue -d payment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mediqueueRedis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: mediqueueRabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: mediqueue
+      RABBITMQ_DEFAULT_PASS: mediqueue123
+    ports:
+      - "15672:15672"   # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  pacienteService:
+    build: ./services/pacienteService
+    container_name: mediqueuePaciente
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-paciente:5432/pacienteDB
+      SPRING_DATASOURCE_USERNAME: mediqueue
+      SPRING_DATASOURCE_PASSWORD: mediqueue123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: mediqueue
+      SPRING_RABBITMQ_PASSWORD: mediqueue123
+    depends_on:
+      postgres-paciente:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  doctorHorario:
+    build: ./services/doctorHorario
+    container_name: mediqueueDoctor
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-doctor:5432/doctorDB
+      SPRING_DATASOURCE_USERNAME: mediqueue
+      SPRING_DATASOURCE_PASSWORD: mediqueue123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: mediqueue
+      SPRING_RABBITMQ_PASSWORD: mediqueue123
+    depends_on:
+      postgres-doctor:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  citaService:
+    build: ./services/citaService
+    container_name: mediqueueCita
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-cita:5432/citaDB
+      SPRING_DATASOURCE_USERNAME: mediqueue
+      SPRING_DATASOURCE_PASSWORD: mediqueue123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: mediqueue
+      SPRING_RABBITMQ_PASSWORD: mediqueue123
+      PATIENT_SERVICE_URL: http://pacienteService:8081
+      DOCTOR_SERVICE_URL: http://doctorHorario:8082
+    depends_on:
+      postgres-cita:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  pagoService:
+    build: ./services/pagoService
+    container_name: mediqueuePago
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-pago:5432/pagoDB
+      SPRING_DATASOURCE_USERNAME: mediqueue
+      SPRING_DATASOURCE_PASSWORD: mediqueue123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: mediqueue
+      SPRING_RABBITMQ_PASSWORD: mediqueue123
+    depends_on:
+      postgres-pago:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  notificacionService:
+    build: ./services/notificacionService
+    container_name: mediqueueNotificacion
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: mediqueue
+      SPRING_RABBITMQ_PASSWORD: mediqueue123
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mediqueuePrometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mediqueueGrafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - mediqueue-net
+    restart: unless-stopped
+    depends_on:
+      - prometheus
