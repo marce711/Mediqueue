@@ -5,11 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="61d7830a-7c3e-4a92-8057-2c84a2001d6a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/services/citasService/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/cita_service/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/doctorHorarios/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/doctor_horario/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/notificacionService/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/notificacion_service/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pacienteService/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/paciente_service/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/.gitkeep" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
