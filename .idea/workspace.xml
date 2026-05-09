@@ -6,6 +6,20 @@
   <component name="ChangeListManager">
     <list default="true" id="61d7830a-7c3e-4a92-8057-2c84a2001d6a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/.gitattributes" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.gitattributes" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/mvnw" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/mvnw" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/mvnw.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/mvnw.cmd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/src/main/java/com/mediqueue/apiGateway/ApiGatewayApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/main/java/com/mediqueue/apiGateway/ApiGatewayApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/apiGateway/src/test/java/com/mediqueue/apiGateway/ApiGatewayApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/test/java/com/mediqueue/apiGateway/ApiGatewayApplicationTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api_gateway/HELP.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api_gateway/target/classes/application.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api_gateway/target/classes/com/mediqueue/apiGateway/ApiGatewayApplication.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,7 +62,7 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.ApiGatewayApplication.executor": "Run",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "develop",
+    "git-widget-placeholder": "feature/citaService",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/marme/Downloads/mediqueue",
