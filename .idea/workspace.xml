@@ -5,76 +5,79 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="61d7830a-7c3e-4a92-8057-2c84a2001d6a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitattributes" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/mediqueue.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/infrastructure/postgres/init.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/apigateway/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/apigateway/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/apigateway/src/main/java/com/mediqueue/apiGateway/ApiGatewayApplication.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/apigateway/src/main/resources/application.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/apigateway/src/test/java/com/mediqueue/apiGateway/ApiGatewayApplicationTests.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/HELP.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/application.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/CitaServiceApplication.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/config/RabbitMQConfig.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/config/RedisConfig.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/controller/AppointmentController.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/controller/HealthController.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AppointmentEvent.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AppointmentRequest.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AppointmentResponse.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AppointmentUpdateRequest.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AvailabilityResponse.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/ErrorResponse.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/entity/Appointment$AppointmentBuilder.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/entity/Appointment.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/entity/AppointmentStatus.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/exception/AppointmentConflictException.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/exception/AppointmentNotFoundException.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/exception/GlobalExceptionHandler.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/exception/InvalidAppointmentException.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/repository/AppointmentRepository.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/service/AppointmentEventPublisher.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/service/AppointmentService.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/surefire-reports/TEST-com.mediqueue.cita_service.CitaServiceApplicationTests.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/surefire-reports/com.mediqueue.cita_service.CitaServiceApplicationTests.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/cita_service/citaservice/target/test-classes/com/mediqueue/cita_service/CitaServiceApplicationTests.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/pago_service/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/pago_service/mvnw" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/services/pago_service/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/pagoService/.gitkeep" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/pagoService/payment-service/.gitattributes" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/pagoService/payment-service/mvnw.cmd" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/model/Payment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitattributes" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/mediqueue.iml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/citasService/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/cita_service/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/doctorHorarios/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/doctor_horario/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/notificacionService/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/notificacion_service/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pacienteService/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/paciente_service/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/.gitkeep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/.gitattributes" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.gitattributes" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/mvnw" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/mvnw" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/mvnw.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/mvnw.cmd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/PaymentServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/PaymentServiceApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/controller/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/controller/GlobalExceptionHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/controller/PaymentController.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/controller/PaymentController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/model/Payment.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/model/Payment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/repository/PaymentRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/repository/PaymentRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/service/PaymentService.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/service/PaymentService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/test/java/payment_service/PaymentServiceApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pago_service/src/test/java/payment_service/PaymentServiceApplicationTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/infrastructure/postgres/init.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/mvnw" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/mvnw" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/src/main/java/com/mediqueue/apiGateway/ApiGatewayApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/src/main/resources/application.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apigateway/src/test/java/com/mediqueue/apiGateway/ApiGatewayApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/citasService/.gitkeep" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/HELP.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/application.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/CitaServiceApplication.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/config/RabbitMQConfig.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/config/RedisConfig.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/controller/AppointmentController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/controller/HealthController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AppointmentEvent.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AppointmentRequest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AppointmentResponse.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AppointmentUpdateRequest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/AvailabilityResponse.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/dto/ErrorResponse.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/entity/Appointment$AppointmentBuilder.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/entity/Appointment.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/entity/AppointmentStatus.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/exception/AppointmentConflictException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/exception/AppointmentNotFoundException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/exception/GlobalExceptionHandler.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/exception/InvalidAppointmentException.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/repository/AppointmentRepository.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/service/AppointmentEventPublisher.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/classes/com/mediqueue/cita_service/service/AppointmentService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/surefire-reports/TEST-com.mediqueue.cita_service.CitaServiceApplicationTests.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/surefire-reports/com.mediqueue.cita_service.CitaServiceApplicationTests.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/cita_service/citaservice/target/test-classes/com/mediqueue/cita_service/CitaServiceApplicationTests.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/doctor_horario/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/doctorHorarios/.gitkeep" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/notificacion_service/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/notificacionService/.gitkeep" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/paciente_service/.gitkeep" beforeDir="false" afterPath="$PROJECT_DIR$/services/pacienteService/.gitkeep" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/PaymentServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/PaymentServiceApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/controller/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/controller/GlobalExceptionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/controller/PaymentController.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/controller/PaymentController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/model/Payment.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/repository/PaymentRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/repository/PaymentRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/src/main/java/payment_service/service/PaymentService.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/service/PaymentService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/src/test/java/payment_service/PaymentServiceApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/pagoService/payment-service/src/test/java/payment_service/PaymentServiceApplicationTests.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -117,10 +120,11 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.ApiGatewayApplication.executor": "Run",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "Merging feature/pagoService",
+    "git-widget-placeholder": "feature/pagoService",
+    "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/marme/Downloads/mediqueue",
+    "last_opened_file_path": "C:/Users/Usuario/Desktop/PROYECTO BD/Mediqueue",
     "to.speed.mode.migration.done": "true"
   }
 }]]></component>
@@ -142,13 +146,6 @@
       <method v="2" />
     </configuration>
   </component>
-  <component name="SharedIndexes">
-    <attachedChunks>
-      <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.30387.90" />
-      </set>
-    </attachedChunks>
-  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="61d7830a-7c3e-4a92-8057-2c84a2001d6a" name="Changes" comment="" />
@@ -157,6 +154,20 @@
       <option name="presentableId" value="Default" />
       <updated>1778098514997</updated>
     </task>
+    <task id="LOCAL-00001">
+      <option name="closed" value="true" />
+      <created>1778483696480</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1778483696480</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Cambios visibles" />
+    <MESSAGE value="Merge branch 'feature/pagoService' of https://github.com/marce711/Mediqueue into feature/pagoService&#10;&#10;# Conflicts:&#10;#&#9;services/pago_service/Dockerfile" />
+    <option name="LAST_COMMIT_MESSAGE" value="Merge branch 'feature/pagoService' of https://github.com/marce711/Mediqueue into feature/pagoService&#10;&#10;# Conflicts:&#10;#&#9;services/pago_service/Dockerfile" />
   </component>
 </project>
