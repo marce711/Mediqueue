@@ -1,4 +1,4 @@
-package com.mediqueue.notificacionservice.consumer;
+package notification_service.notificacionservice.consumer;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;

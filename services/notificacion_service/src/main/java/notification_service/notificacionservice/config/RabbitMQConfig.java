@@ -1,4 +1,4 @@
-package com.mediqueue.notificacionservice.config;
+package notification_service.notificacionservice.config;
 
 import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;

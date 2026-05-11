@@ -7,12 +7,24 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="apiGateway" />
+        <module name="notificacionservice" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="cita_service" target="21" />
+      <module name="doctor_horario" target="21" />
+      <module name="pacienteService" target="17" />
+      <module name="payment-service" target="21" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="apiGateway" options="-parameters" />
+      <module name="cita_service" options="-parameters" />
+      <module name="doctor_horario" options="-parameters" />
+      <module name="notificacionservice" options="-parameters" />
+      <module name="pacienteService" options="-parameters" />
+      <module name="payment-service" options="-parameters" />
     </option>
   </component>
 </project>

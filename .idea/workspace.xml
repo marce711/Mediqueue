@@ -4,22 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="61d7830a-7c3e-4a92-8057-2c84a2001d6a" name="Changes" comment="">
+    <list default="true" id="1acd5d04-c61c-4006-93fb-02eb59323c0f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/.gitattributes" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.gitattributes" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/mvnw" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/mvnw" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/mvnw.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/mvnw.cmd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/src/main/java/com/mediqueue/apiGateway/ApiGatewayApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/main/java/com/mediqueue/apiGateway/ApiGatewayApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/src/test/java/com/mediqueue/apiGateway/ApiGatewayApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/test/java/com/mediqueue/apiGateway/ApiGatewayApplicationTests.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api_gateway/HELP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api_gateway/target/classes/application.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api_gateway/target/classes/com/mediqueue/apiGateway/ApiGatewayApplication.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/notificacion_service/src/main/java/config/RabbitMQConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/notificacion_service/src/main/java/notification_service/notificacionservice/config/RabbitMQConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/notificacion_service/src/main/java/consumer/NotificationConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/notificacion_service/src/main/java/notification_service/notificacionservice/consumer/NotificationConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/notificacion_service/src/main/java/notificacionservice/NotificacionserviceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/notificacion_service/src/main/java/notification_service/notificacionservice/NotificacionserviceApplication.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,9 +19,14 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="31" />
+    <option name="cachedIndexableFilesCount" value="70" />
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="feature/doctorHorario" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MavenImportPreferences">
@@ -43,11 +40,11 @@
     <commands />
     <urls />
   </component>
-  <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 2
-}</component>
-  <component name="ProjectId" id="3DMio9OISK8BJowxOee6aoLOuay" />
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 2
+}]]></component>
+  <component name="ProjectId" id="3DafkHuSqzwvyZKSDf8fpCB2Az6" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -59,16 +56,24 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Spring Boot.ApiGatewayApplication.executor": "Run",
+    "Spring Boot.DoctorHorarioServiceApplication.executor": "Run",
+    "Spring Boot.NotificacionserviceApplication.executor": "Run",
+    "Spring Boot.PacienteServiceApplication.executor": "Run",
+    "Spring Boot.PaymentServiceApplication.executor": "Run",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "feature/citaService",
+    "git-widget-placeholder": "feature/notificacionService",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/marme/Downloads/mediqueue",
+    "last_opened_file_path": "C:/Users/marme/Downloads/Mediqueue",
     "to.speed.mode.migration.done": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="" />
+      <recent name="java" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -78,11 +83,11 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="61d7830a-7c3e-4a92-8057-2c84a2001d6a" name="Changes" comment="" />
-      <created>1778098514997</created>
+      <changelist id="1acd5d04-c61c-4006-93fb-02eb59323c0f" name="Changes" comment="" />
+      <created>1778525245526</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1778098514997</updated>
+      <updated>1778525245526</updated>
     </task>
     <servers />
   </component>
