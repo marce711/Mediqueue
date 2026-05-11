@@ -6,9 +6,6 @@
       <list>
         <option value="$PROJECT_DIR$/apiGateway/apiGateway/pom.xml" />
         <option value="$PROJECT_DIR$/apiGateway/pom.xml" />
-        <option value="$PROJECT_DIR$/services/apigateway/pom.xml" />
-        <option value="$PROJECT_DIR$/services/cita_service/citaservice/pom.xml" />
-        <option value="$PROJECT_DIR$/services/pagoService/payment-service/pom.xml" />
       </list>
     </option>
   </component>

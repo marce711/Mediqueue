@@ -3,8 +3,5 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/apiGateway/apiGateway/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/apiGateway/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/services/apigateway/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/services/cita_service/citaservice/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/services/pagoService/payment-service/src/main/java" charset="UTF-8" />
   </component>
 </project>
