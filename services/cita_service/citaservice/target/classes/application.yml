@@ -1,0 +1,73 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: cita_service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres-cita:5432/citaDB}
+    username: ${SPRING_DATASOURCE_USERNAME:mediqueue}
+    password: ${SPRING_DATASOURCE_PASSWORD:mediqueue123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      validation-timeout: 5000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:redis}
+      port: ${SPRING_REDIS_PORT:6379}
+      timeout: 2s
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:mediqueue}
+    password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
+    connection-timeout: 5s
+  cache:
+    type: redis
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    redis:
+      enabled: true
+    rabbit:
+      enabled: true
+    db:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+app:
+  rabbitmq:
+    exchange: mediqueue.appointments.exchange
+    appointment-created-queue: mediqueue.appointments.created
+    appointment-cancelled-queue: mediqueue.appointments.cancelled
+    appointment-created-routing-key: appointments.created
+    appointment-cancelled-routing-key: appointments.cancelled
+
+logging:
+  level:
+    com.mediqueue.cita_service: INFO
+    org.hibernate.SQL: WARN
