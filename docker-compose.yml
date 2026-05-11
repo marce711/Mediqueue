@@ -107,7 +107,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -156,7 +156,7 @@ services:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: mediqueue
       SPRING_RABBITMQ_PASSWORD: mediqueue123
-      PATIENT_SERVICE_URL: http://paciente_service:8081
+      PATIENT_SERVICE_URL: http://paciente_service:8083
       DOCTOR_SERVICE_URL: http://doctor_horario:8082
     depends_on:
       postgres:
@@ -175,7 +175,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
