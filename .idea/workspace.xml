@@ -5,21 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="61d7830a-7c3e-4a92-8057-2c84a2001d6a" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/.gitattributes" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.gitattributes" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/mvnw" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/mvnw" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/mvnw.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/mvnw.cmd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/src/main/java/com/mediqueue/apiGateway/ApiGatewayApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/main/java/com/mediqueue/apiGateway/ApiGatewayApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apiGateway/src/test/java/com/mediqueue/apiGateway/ApiGatewayApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/services/apigateway/src/test/java/com/mediqueue/apiGateway/ApiGatewayApplicationTests.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api_gateway/HELP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api_gateway/target/classes/application.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api_gateway/target/classes/com/mediqueue/apiGateway/ApiGatewayApplication.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/PaymentServiceApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/controller/GlobalExceptionHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/controller/PaymentController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/model/Payment.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/repository/PaymentRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/java/payment_service/service/PaymentService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/main/resources/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pagoService/payment-service/src/test/java/payment_service/PaymentServiceApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/pago_service/.gitkeep" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,7 +30,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="31" />
+    <option name="cachedIndexableFilesCount" value="62" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -62,13 +65,18 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.ApiGatewayApplication.executor": "Run",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "feature/citaService",
+    "git-widget-placeholder": "feature/pagoService",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/marme/Downloads/mediqueue",
     "to.speed.mode.migration.done": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\marme\Downloads\Mediqueue\services\pago_service" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
