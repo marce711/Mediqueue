@@ -7,9 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, UUID> {
+
+    Optional<Appointment> findByIdempotencyKey(String idempotencyKey);
 
     boolean existsByDoctorIdAndAppointmentDateAndStatusIn(
             String doctorId,

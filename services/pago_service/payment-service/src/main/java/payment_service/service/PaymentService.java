@@ -11,7 +11,6 @@ import payment_service.model.Payment;
 import payment_service.repository.PaymentRepository;
 
 import java.util.List;
-import java.util.Random;
 
 @Service
 public class PaymentService {
@@ -20,7 +19,6 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentEventPublisher eventPublisher;
-    private final Random random = new Random();
 
     public PaymentService(PaymentRepository paymentRepository, PaymentEventPublisher eventPublisher) {
         this.paymentRepository = paymentRepository;
@@ -28,9 +26,17 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentResponse processPayment(PaymentRequest request) {
+    public PaymentResponse processPayment(PaymentRequest request, String idempotencyKey) {
         logger.info("Iniciando procesamiento de pago. appointmentId={}, patientId={}",
                 request.appointmentId(), request.patientId());
+
+        String normalizedIdempotencyKey = normalizeIdempotencyKey(idempotencyKey);
+        if (normalizedIdempotencyKey != null) {
+            var existing = paymentRepository.findByIdempotencyKey(normalizedIdempotencyKey);
+            if (existing.isPresent()) {
+                return toResponse(existing.get());
+            }
+        }
 
         if (paymentRepository.existsByAppointmentIdAndStatus(request.appointmentId(), "SUCCESS")) {
             throw new RuntimeException("Esta cita ya fue pagada");
@@ -41,9 +47,9 @@ public class PaymentService {
         payment.setPatientId(request.patientId());
         payment.setAmount(request.amount());
         payment.setStatus("PENDING");
+        payment.setIdempotencyKey(normalizedIdempotencyKey);
 
-        boolean success = random.nextBoolean();
-        payment.setStatus(success ? "SUCCESS" : "FAILED");
+        payment.setStatus("SUCCESS");
 
         Payment savedPayment = paymentRepository.save(payment);
         logger.info("Pago procesado. paymentId={}, appointmentId={}, status={}",
@@ -68,8 +74,19 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public List<PaymentResponse> findByAppointmentId(Long appointmentId) {
+    public List<PaymentResponse> findByAppointmentId(String appointmentId) {
         return paymentRepository.findByAppointmentId(appointmentId).stream().map(this::toResponse).toList();
+    }
+
+    private String normalizeIdempotencyKey(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return null;
+        }
+        String normalized = idempotencyKey.trim();
+        if (normalized.length() > 120) {
+            throw new RuntimeException("Idempotency-Key debe tener 120 caracteres o menos");
+        }
+        return normalized;
     }
 
     private PaymentResponse toResponse(Payment payment) {

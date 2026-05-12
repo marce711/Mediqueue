@@ -17,11 +17,16 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - paciente_service
-      - cita_service
-      - doctor_horario
-      - pago_service
-      - notificacion_service
+      paciente_service:
+        condition: service_healthy
+      cita_service:
+        condition: service_healthy
+      doctor_horario:
+        condition: service_healthy
+      pago_service:
+        condition: service_healthy
+      notificacion_service:
+        condition: service_healthy
     networks:
       - mediqueue-net
     restart: unless-stopped
@@ -36,7 +41,7 @@ services:
     environment:
       POSTGRES_USER: mediqueue
       POSTGRES_PASSWORD: mediqueue123
-      POSTGRES_DB: mediqueue
+      POSTGRES_DB: mediqueue_admin
     ports:
       - "5432:5432"
     volumes:
@@ -46,7 +51,7 @@ services:
       - mediqueue-net
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U mediqueue -d mediqueue" ]
+      test: [ "CMD-SHELL", "pg_isready -U mediqueue -d mediqueue_admin" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -87,10 +92,10 @@ services:
   paciente_service:
     build: ./services/paciente_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueue
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pacientedb
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
     depends_on:
       postgres:
         condition: service_healthy
@@ -113,10 +118,10 @@ services:
   doctor_horario:
     build: ./services/doctor_horario
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueue
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/doctordb
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,15 +144,17 @@ services:
   cita_service:
     build: ./services/cita_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueue
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/citadb
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: mediqueue
       SPRING_RABBITMQ_PASSWORD: mediqueue123
+      SPRING_RABBITMQ_PUBLISHER_CONFIRM_TYPE: correlated
+      SPRING_RABBITMQ_PUBLISHER_RETURNS: "true"
       PATIENT_SERVICE_URL: http://paciente_service:8083
       DOCTOR_SERVICE_URL: http://doctor_horario:8082
     depends_on:
@@ -176,13 +183,15 @@ services:
   pago_service:
     build: ./services/pago_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueue
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pagodb
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: mediqueue
       SPRING_RABBITMQ_PASSWORD: mediqueue123
+      SPRING_RABBITMQ_PUBLISHER_CONFIRM_TYPE: correlated
+      SPRING_RABBITMQ_PUBLISHER_RETURNS: "true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -210,6 +219,7 @@ services:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: mediqueue
       SPRING_RABBITMQ_PASSWORD: mediqueue123
+      SPRING_RABBITMQ_LISTENER_SIMPLE_DEFAULT_REQUEUE_REJECTED: "false"
     depends_on:
       rabbitmq:
         condition: service_healthy

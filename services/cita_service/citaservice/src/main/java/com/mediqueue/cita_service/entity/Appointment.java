@@ -8,7 +8,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,7 +27,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "appointments")
+@Table(
+        name = "appointments",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "ux_appointments_idempotency_key_jpa", columnNames = "idempotency_key")
+        }
+)
 public class Appointment {
 
     @Id
@@ -44,16 +52,34 @@ public class Appointment {
     @Column(nullable = false, length = 20)
     private AppointmentStatus status;
 
+    @Column(name = "idempotency_key", length = 120)
+    private String idempotencyKey;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Version
+    private Long version;
 
     @PrePersist
     void prePersist() {
         if (status == null) {
             status = AppointmentStatus.PENDING;
         }
+        LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+            createdAt = now;
         }
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

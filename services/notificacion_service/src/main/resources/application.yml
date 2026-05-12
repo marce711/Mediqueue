@@ -11,11 +11,13 @@ spring:
     password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
     listener:
       simple:
+        default-requeue-rejected: false
         retry:
           enabled: true
           initial-interval: 2s
           max-attempts: 3
           multiplier: 2
+          max-interval: 10s
 
 management:
   endpoints:

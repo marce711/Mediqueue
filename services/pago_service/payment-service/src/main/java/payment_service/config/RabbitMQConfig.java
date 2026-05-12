@@ -4,6 +4,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -38,12 +39,33 @@ public class RabbitMQConfig {
 
     @Bean
     Queue paymentSuccessQueue() {
-        return new Queue(paymentSuccessQueueName, true);
+        return QueueBuilder.durable(paymentSuccessQueueName)
+                .deadLetterExchange(paymentsExchangeName + ".dlx")
+                .deadLetterRoutingKey(paymentSuccessRoutingKey + ".dlq")
+                .build();
     }
 
     @Bean
     Queue paymentFailedQueue() {
-        return new Queue(paymentFailedQueueName, true);
+        return QueueBuilder.durable(paymentFailedQueueName)
+                .deadLetterExchange(paymentsExchangeName + ".dlx")
+                .deadLetterRoutingKey(paymentFailedRoutingKey + ".dlq")
+                .build();
+    }
+
+    @Bean
+    DirectExchange paymentsDeadLetterExchange() {
+        return new DirectExchange(paymentsExchangeName + ".dlx", true, false);
+    }
+
+    @Bean
+    Queue paymentSuccessDeadLetterQueue() {
+        return QueueBuilder.durable(paymentSuccessQueueName + ".dlq").build();
+    }
+
+    @Bean
+    Queue paymentFailedDeadLetterQueue() {
+        return QueueBuilder.durable(paymentFailedQueueName + ".dlq").build();
     }
 
     @Bean
@@ -60,6 +82,22 @@ public class RabbitMQConfig {
             DirectExchange paymentsExchange
     ) {
         return BindingBuilder.bind(queue).to(paymentsExchange).with(paymentFailedRoutingKey);
+    }
+
+    @Bean
+    Binding paymentSuccessDeadLetterBinding(
+            @Qualifier("paymentSuccessDeadLetterQueue") Queue queue,
+            @Qualifier("paymentsDeadLetterExchange") DirectExchange exchange
+    ) {
+        return BindingBuilder.bind(queue).to(exchange).with(paymentSuccessRoutingKey + ".dlq");
+    }
+
+    @Bean
+    Binding paymentFailedDeadLetterBinding(
+            @Qualifier("paymentFailedDeadLetterQueue") Queue queue,
+            @Qualifier("paymentsDeadLetterExchange") DirectExchange exchange
+    ) {
+        return BindingBuilder.bind(queue).to(exchange).with(paymentFailedRoutingKey + ".dlq");
     }
 
     @Bean

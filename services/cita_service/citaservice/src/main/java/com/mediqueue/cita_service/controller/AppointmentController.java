@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,8 +37,11 @@ public class AppointmentController {
     private final AppointmentService appointmentService;
 
     @PostMapping
-    public ResponseEntity<AppointmentResponse> create(@Valid @RequestBody AppointmentRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.create(request));
+    public ResponseEntity<AppointmentResponse> create(
+            @Valid @RequestBody AppointmentRequest request,
+            @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.create(request, idempotencyKey));
     }
 
     @GetMapping

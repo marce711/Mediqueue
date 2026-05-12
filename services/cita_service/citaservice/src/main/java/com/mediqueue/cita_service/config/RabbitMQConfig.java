@@ -4,6 +4,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -38,12 +39,33 @@ public class RabbitMQConfig {
 
     @Bean
     Queue appointmentCreatedQueue() {
-        return new Queue(appointmentCreatedQueue, true);
+        return QueueBuilder.durable(appointmentCreatedQueue)
+                .deadLetterExchange(exchangeName + ".dlx")
+                .deadLetterRoutingKey(appointmentCreatedRoutingKey + ".dlq")
+                .build();
     }
 
     @Bean
     Queue appointmentCancelledQueue() {
-        return new Queue(appointmentCancelledQueue, true);
+        return QueueBuilder.durable(appointmentCancelledQueue)
+                .deadLetterExchange(exchangeName + ".dlx")
+                .deadLetterRoutingKey(appointmentCancelledRoutingKey + ".dlq")
+                .build();
+    }
+
+    @Bean
+    DirectExchange appointmentDeadLetterExchange() {
+        return new DirectExchange(exchangeName + ".dlx", true, false);
+    }
+
+    @Bean
+    Queue appointmentCreatedDeadLetterQueue() {
+        return QueueBuilder.durable(appointmentCreatedQueue + ".dlq").build();
+    }
+
+    @Bean
+    Queue appointmentCancelledDeadLetterQueue() {
+        return QueueBuilder.durable(appointmentCancelledQueue + ".dlq").build();
     }
 
     @Bean
@@ -64,6 +86,22 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(appointmentCancelledQueue)
                 .to(appointmentExchange)
                 .with(appointmentCancelledRoutingKey);
+    }
+
+    @Bean
+    Binding appointmentCreatedDeadLetterBinding(
+            @Qualifier("appointmentCreatedDeadLetterQueue") Queue queue,
+            @Qualifier("appointmentDeadLetterExchange") DirectExchange exchange
+    ) {
+        return BindingBuilder.bind(queue).to(exchange).with(appointmentCreatedRoutingKey + ".dlq");
+    }
+
+    @Bean
+    Binding appointmentCancelledDeadLetterBinding(
+            @Qualifier("appointmentCancelledDeadLetterQueue") Queue queue,
+            @Qualifier("appointmentDeadLetterExchange") DirectExchange exchange
+    ) {
+        return BindingBuilder.bind(queue).to(exchange).with(appointmentCancelledRoutingKey + ".dlq");
     }
 
     @Bean

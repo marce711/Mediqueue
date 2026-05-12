@@ -14,6 +14,8 @@ import com.mediqueue.cita_service.exception.ExternalServiceException;
 import com.mediqueue.cita_service.exception.InvalidAppointmentException;
 import com.mediqueue.cita_service.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -49,7 +51,16 @@ public class AppointmentService {
     private String doctorServiceUrl;
 
     @Transactional
-    public AppointmentResponse create(AppointmentRequest request) {
+    @CacheEvict(value = "appointmentAvailability", allEntries = true)
+    public AppointmentResponse create(AppointmentRequest request, String idempotencyKey) {
+        String normalizedIdempotencyKey = normalizeIdempotencyKey(idempotencyKey);
+        if (normalizedIdempotencyKey != null) {
+            var existing = appointmentRepository.findByIdempotencyKey(normalizedIdempotencyKey);
+            if (existing.isPresent()) {
+                return toResponse(existing.get());
+            }
+        }
+
         validateFutureDate(request.appointmentDate());
         validatePatientExists(request.patientId());
         validateDoctorHasAvailableSchedule(request.doctorId());
@@ -60,6 +71,7 @@ public class AppointmentService {
                 .doctorId(request.doctorId().trim())
                 .appointmentDate(request.appointmentDate())
                 .status(AppointmentStatus.PENDING)
+                .idempotencyKey(normalizedIdempotencyKey)
                 .build();
 
         try {
@@ -99,6 +111,7 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "appointmentAvailability", key = "#doctorId.trim() + ':' + #appointmentDate.toString()")
     public AvailabilityResponse checkAvailability(String doctorId, LocalDateTime appointmentDate) {
         validateFutureDate(appointmentDate);
         boolean unavailable = appointmentRepository.existsByDoctorIdAndAppointmentDateAndStatusIn(
@@ -110,6 +123,7 @@ public class AppointmentService {
     }
 
     @Transactional
+    @CacheEvict(value = "appointmentAvailability", allEntries = true)
     public AppointmentResponse updateStatus(UUID id, AppointmentUpdateRequest request) {
         Appointment appointment = getAppointment(id);
         appointment.setStatus(request.status());
@@ -121,6 +135,7 @@ public class AppointmentService {
     }
 
     @Transactional
+    @CacheEvict(value = "appointmentAvailability", allEntries = true)
     public AppointmentResponse cancel(UUID id) {
         Appointment appointment = getAppointment(id);
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
@@ -197,6 +212,17 @@ public class AppointmentService {
         if (appointmentDate == null || !appointmentDate.isAfter(LocalDateTime.now())) {
             throw new InvalidAppointmentException("Appointment date must be in the future");
         }
+    }
+
+    private String normalizeIdempotencyKey(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return null;
+        }
+        String normalized = idempotencyKey.trim();
+        if (normalized.length() > 120) {
+            throw new InvalidAppointmentException("Idempotency-Key must be 120 characters or less");
+        }
+        return normalized;
     }
 
     private AppointmentResponse toResponse(Appointment appointment) {

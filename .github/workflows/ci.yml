@@ -1,0 +1,38 @@
+name: mediqueue-ci
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - services/apigateway
+          - services/paciente_service
+          - services/doctor_horario
+          - services/cita_service/citaservice
+          - services/pago_service/payment-service
+          - services/notificacion_service
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and test ${{ matrix.service }}
+        working-directory: ${{ matrix.service }}
+        run: mvn -B test
+
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Docker Compose file
+        run: docker compose config

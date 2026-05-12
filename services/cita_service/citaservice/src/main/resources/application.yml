@@ -35,6 +35,10 @@ spring:
     username: ${SPRING_RABBITMQ_USERNAME:mediqueue}
     password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
     connection-timeout: 5s
+    publisher-confirm-type: ${SPRING_RABBITMQ_PUBLISHER_CONFIRM_TYPE:correlated}
+    publisher-returns: ${SPRING_RABBITMQ_PUBLISHER_RETURNS:true}
+    template:
+      mandatory: true
   cache:
     type: redis
 

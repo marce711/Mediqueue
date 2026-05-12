@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 
 public record PaymentResponse(
         Long id,
-        Long appointmentId,
-        Long patientId,
+        String appointmentId,
+        String patientId,
         BigDecimal amount,
         String status
 ) {

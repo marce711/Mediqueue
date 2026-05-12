@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 
 public record PaymentEvent(
         Long paymentId,
-        Long appointmentId,
-        Long patientId,
+        String appointmentId,
+        String patientId,
         BigDecimal amount,
         String status,
         String eventType,

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import payment_service.dto.PaymentRequest;
 import payment_service.dto.PaymentResponse;
@@ -33,10 +34,13 @@ public class PaymentController {
     }
 
     @PostMapping
-    public ResponseEntity<PaymentResponse> processPayment(@Valid @RequestBody PaymentRequest payment) {
+    public ResponseEntity<PaymentResponse> processPayment(
+            @Valid @RequestBody PaymentRequest payment,
+            @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey
+    ) {
         logger.info("Solicitud recibida para procesar pago. appointmentId={}, patientId={}",
                 payment.appointmentId(), payment.patientId());
-        PaymentResponse result = paymentService.processPayment(payment);
+        PaymentResponse result = paymentService.processPayment(payment, idempotencyKey);
         logger.info("Pago procesado exitosamente. paymentId={}, status={}", result.id(), result.status());
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
@@ -52,7 +56,7 @@ public class PaymentController {
     }
 
     @GetMapping("/appointment/{appointmentId}")
-    public ResponseEntity<List<PaymentResponse>> findByAppointmentId(@PathVariable @Positive Long appointmentId) {
+    public ResponseEntity<List<PaymentResponse>> findByAppointmentId(@PathVariable String appointmentId) {
         return ResponseEntity.ok(paymentService.findByAppointmentId(appointmentId));
     }
 }
