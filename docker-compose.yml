@@ -36,6 +36,7 @@ services:
     environment:
       POSTGRES_USER: mediqueue
       POSTGRES_PASSWORD: mediqueue123
+      POSTGRES_DB: mediqueue
     ports:
       - "5432:5432"
     volumes:
@@ -45,7 +46,7 @@ services:
       - mediqueue-net
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U mediqueue" ]
+      test: [ "CMD-SHELL", "pg_isready -U mediqueue -d mediqueue" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -86,9 +87,10 @@ services:
   paciente_service:
     build: ./services/paciente_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pacientedb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueue
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,9 +113,10 @@ services:
   doctor_horario:
     build: ./services/doctor_horario
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/doctordb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueue
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
     depends_on:
       postgres:
         condition: service_healthy
@@ -136,9 +139,10 @@ services:
   cita_service:
     build: ./services/cita_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/citadb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueue
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
@@ -172,9 +176,10 @@ services:
   pago_service:
     build: ./services/pago_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pagodb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueue
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: mediqueue
       SPRING_RABBITMQ_PASSWORD: mediqueue123

@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'paciente_service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['paciente_service:8083']
+
+  - job_name: 'doctor_horario'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['doctor_horario:8082']
+
+  - job_name: 'cita_service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['cita_service:8081']
+
+  - job_name: 'pago_service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['pago_service:8084']
+
+  - job_name: 'notificacion_service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['notificacion_service:8085']
+
+  - job_name: 'api_gateway'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['api_gateway:8080']
