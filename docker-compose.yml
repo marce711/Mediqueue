@@ -43,7 +43,7 @@ services:
       POSTGRES_PASSWORD: mediqueue123
       POSTGRES_DB: mediqueue_admin
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
@@ -114,6 +114,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    ports:
+      - "8083:8083"
 
   doctor_horario:
     build: ./services/doctor_horario
@@ -140,6 +142,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    ports:
+      - "8082:8082"
 
   cita_service:
     build: ./services/cita_service
@@ -179,6 +183,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    ports:
+      - "8081:8081"
 
   pago_service:
     build: ./services/pago_service
@@ -212,6 +218,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    ports:
+      - "8084:8084"
 
   notificacion_service:
     build: ./services/notificacion_service
@@ -232,6 +240,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    ports:
+      - "8085:8085"
 
   prometheus:
     image: prom/prometheus:latest
