@@ -1,0 +1,18 @@
+spring:
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+app:
+  rabbitmq:
+    appointments-exchange: mediqueue.appointments.exchange
+    appointment-created-queue: mediqueue.appointments.created
+    appointment-cancelled-queue: mediqueue.appointments.cancelled
+    appointment-created-routing-key: appointments.created
+    appointment-cancelled-routing-key: appointments.cancelled
+    payments-exchange: mediqueue.payments.exchange
+    payment-success-queue: mediqueue.payments.success
+    payment-failed-queue: mediqueue.payments.failed
+    payment-success-routing-key: payments.success
+    payment-failed-routing-key: payments.failed

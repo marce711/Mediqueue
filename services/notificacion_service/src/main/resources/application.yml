@@ -1,0 +1,45 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: notificacion_service
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:mediqueue}
+    password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 2s
+          max-attempts: 3
+          multiplier: 2
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+app:
+  rabbitmq:
+    appointments-exchange: mediqueue.appointments.exchange
+    appointment-created-queue: mediqueue.appointments.created
+    appointment-cancelled-queue: mediqueue.appointments.cancelled
+    appointment-created-routing-key: appointments.created
+    appointment-cancelled-routing-key: appointments.cancelled
+    payments-exchange: mediqueue.payments.exchange
+    payment-success-queue: mediqueue.payments.success
+    payment-failed-queue: mediqueue.payments.failed
+    payment-success-routing-key: payments.success
+    payment-failed-routing-key: payments.failed
+
+logging:
+  level:
+    com.mediqueue.notificacion: INFO

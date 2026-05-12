@@ -60,6 +60,9 @@ management:
       application: ${spring.application.name}
 
 app:
+  services:
+    patient-url: ${PATIENT_SERVICE_URL:http://paciente_service:8083}
+    doctor-url: ${DOCTOR_SERVICE_URL:http://doctor_horario:8082}
   rabbitmq:
     exchange: mediqueue.appointments.exchange
     appointment-created-queue: mediqueue.appointments.created

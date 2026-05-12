@@ -19,11 +19,14 @@ services:
     depends_on:
       - paciente_service
       - cita_service
+      - doctor_horario
+      - pago_service
+      - notificacion_service
     networks:
       - mediqueue-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -67,6 +70,7 @@ services:
       RABBITMQ_DEFAULT_USER: mediqueue
       RABBITMQ_DEFAULT_PASS: mediqueue123
     ports:
+      - "5672:5672"
       - "15672:15672"   # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
@@ -82,20 +86,11 @@ services:
   paciente_service:
     build: ./services/paciente_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pacienteDB
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pacientedb
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_USERNAME: mediqueue
-      SPRING_RABBITMQ_PASSWORD: mediqueue123
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
     networks:
       - mediqueue-net
@@ -119,15 +114,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/doctordb
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_USERNAME: mediqueue
-      SPRING_RABBITMQ_PASSWORD: mediqueue123
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - mediqueue-net
@@ -148,7 +136,7 @@ services:
   cita_service:
     build: ./services/cita_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/citaDB
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/citadb
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_REDIS_HOST: redis
@@ -184,18 +172,14 @@ services:
   pago_service:
     build: ./services/pago_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pagoDB
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pagodb
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: mediqueue
       SPRING_RABBITMQ_PASSWORD: mediqueue123
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -216,7 +200,7 @@ services:
       start_period: 60s
 
   notificacion_service:
-    build: ./services/notificacion_Service
+    build: ./services/notificacion_service
     environment:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: mediqueue
@@ -227,6 +211,12 @@ services:
     networks:
       - mediqueue-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   prometheus:
     image: prom/prometheus:latest

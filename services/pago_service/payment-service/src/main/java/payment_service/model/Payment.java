@@ -3,6 +3,8 @@ package payment_service.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "payments")
 public class Payment {
@@ -21,7 +23,7 @@ public class Payment {
 
     @NotNull(message = "amount es obligatorio")
     @Positive(message = "El monto debe ser mayor a 0")
-    private Double amount;
+    private BigDecimal amount;
 
     private String status;
 
@@ -55,11 +57,11 @@ public class Payment {
         this.patientId = patientId;
     }
 
-    public Double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(Double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 

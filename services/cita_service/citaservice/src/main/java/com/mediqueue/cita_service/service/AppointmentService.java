@@ -4,18 +4,26 @@ import com.mediqueue.cita_service.dto.AppointmentRequest;
 import com.mediqueue.cita_service.dto.AppointmentResponse;
 import com.mediqueue.cita_service.dto.AppointmentUpdateRequest;
 import com.mediqueue.cita_service.dto.AvailabilityResponse;
+import com.mediqueue.cita_service.dto.ExternalDoctorHorarioResponse;
+import com.mediqueue.cita_service.dto.ExternalPacienteResponse;
 import com.mediqueue.cita_service.entity.Appointment;
 import com.mediqueue.cita_service.entity.AppointmentStatus;
 import com.mediqueue.cita_service.exception.AppointmentConflictException;
 import com.mediqueue.cita_service.exception.AppointmentNotFoundException;
+import com.mediqueue.cita_service.exception.ExternalServiceException;
 import com.mediqueue.cita_service.exception.InvalidAppointmentException;
 import com.mediqueue.cita_service.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -32,10 +40,19 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final AppointmentEventPublisher eventPublisher;
+    private final RestTemplate restTemplate;
+
+    @Value("${app.services.patient-url}")
+    private String patientServiceUrl;
+
+    @Value("${app.services.doctor-url}")
+    private String doctorServiceUrl;
 
     @Transactional
     public AppointmentResponse create(AppointmentRequest request) {
         validateFutureDate(request.appointmentDate());
+        validatePatientExists(request.patientId());
+        validateDoctorHasAvailableSchedule(request.doctorId());
         validateAvailability(request.doctorId(), request.patientId(), request.appointmentDate());
 
         Appointment appointment = Appointment.builder()
@@ -137,6 +154,42 @@ public class AppointmentService {
         );
         if (patientUnavailable) {
             throw new AppointmentConflictException("Patient already has an active appointment at the requested time");
+        }
+    }
+
+    private void validatePatientExists(String patientId) {
+        try {
+            restTemplate.getForEntity(
+                    patientServiceUrl + "/api/pacientes/{id}",
+                    ExternalPacienteResponse.class,
+                    patientId.trim()
+            );
+        } catch (HttpClientErrorException.NotFound exception) {
+            throw new InvalidAppointmentException("Patient does not exist: " + patientId);
+        } catch (HttpClientErrorException.BadRequest exception) {
+            throw new InvalidAppointmentException("Invalid patientId: " + patientId);
+        } catch (RestClientException exception) {
+            throw new ExternalServiceException("Could not validate patient service", exception);
+        }
+    }
+
+    private void validateDoctorHasAvailableSchedule(String doctorId) {
+        try {
+            ExternalDoctorHorarioResponse[] horarios = restTemplate.getForObject(
+                    doctorServiceUrl + "/api/horarios/doctor/{doctorId}?disponible=true",
+                    ExternalDoctorHorarioResponse[].class,
+                    doctorId.trim()
+            );
+            boolean hasAvailableSchedule = horarios != null && Arrays.stream(horarios).anyMatch(ExternalDoctorHorarioResponse::disponible);
+            if (!hasAvailableSchedule) {
+                throw new InvalidAppointmentException("Doctor does not have available schedules: " + doctorId);
+            }
+        } catch (HttpClientErrorException.NotFound exception) {
+            throw new InvalidAppointmentException("Doctor schedule not found: " + doctorId);
+        } catch (HttpClientErrorException.BadRequest exception) {
+            throw new InvalidAppointmentException("Invalid doctorId: " + doctorId);
+        } catch (RestClientException exception) {
+            throw new ExternalServiceException("Could not validate doctor schedule service", exception);
         }
     }
 
