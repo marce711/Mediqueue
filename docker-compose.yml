@@ -12,20 +12,20 @@ volumes:
 
 services:
 
-  api_gateway:
+  api-gateway:
     build: ./services/apigateway
     ports:
       - "8080:8080"
     depends_on:
-      paciente_service:
+      paciente-service:
         condition: service_healthy
-      cita_service:
+      cita-service:
         condition: service_healthy
-      doctor_horario:
+      doctor-horario:
         condition: service_healthy
-      pago_service:
+      pago-service:
         condition: service_healthy
-      notificacion_service:
+      notificacion-service:
         condition: service_healthy
     networks:
       - mediqueue-net
@@ -89,7 +89,7 @@ services:
       timeout: 10s
       retries: 5
 
-  paciente_service:
+  paciente-service:
     build: ./services/paciente_service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pacientedb
@@ -117,7 +117,7 @@ services:
     ports:
       - "8083:8083"
 
-  doctor_horario:
+  doctor-horario:
     build: ./services/doctor_horario
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/doctordb
@@ -145,7 +145,7 @@ services:
     ports:
       - "8082:8082"
 
-  cita_service:
+  cita-service:
     build: ./services/cita_service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/citadb
@@ -159,8 +159,8 @@ services:
       SPRING_RABBITMQ_PASSWORD: mediqueue123
       SPRING_RABBITMQ_PUBLISHER_CONFIRM_TYPE: correlated
       SPRING_RABBITMQ_PUBLISHER_RETURNS: "true"
-      PATIENT_SERVICE_URL: http://paciente_service:8083
-      DOCTOR_SERVICE_URL: http://doctor_horario:8082
+      PATIENT_SERVICE_URL: http://paciente-service:8083
+      DOCTOR_SERVICE_URL: http://doctor-horario:8082
     depends_on:
       postgres:
         condition: service_healthy
@@ -186,7 +186,7 @@ services:
     ports:
       - "8081:8081"
 
-  pago_service:
+  pago-service:
     build: ./services/pago_service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pagodb
@@ -221,7 +221,7 @@ services:
     ports:
       - "8084:8084"
 
-  notificacion_service:
+  notificacion-service:
     build: ./services/notificacion_service
     environment:
       SPRING_RABBITMQ_HOST: rabbitmq

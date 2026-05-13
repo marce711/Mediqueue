@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: apiGateway
+    name: api-gateway
 
   cloud:
     gateway:
@@ -12,32 +12,32 @@ spring:
           routes:
 
             - id: paciente-service
-              uri: http://paciente_service:8083
+              uri: http://paciente-service:8083
               predicates:
                 - Path=/api/pacientes/**
 
             - id: cita-service
-              uri: http://cita_service:8081
+              uri: http://cita-service:8081
               predicates:
                 - Path=/api/v1/appointments/**
 
-            - id: doctor-horario-service
-              uri: http://doctor_horario:8082
+            - id: doctor-horario
+              uri: http://doctor-horario:8082
               predicates:
                 - Path=/api/horarios/**
 
             - id: pago-service
-              uri: http://pago_service:8084
+              uri: http://pago-service:8084
               predicates:
                 - Path=/api/payments/**
 
             - id: pago-service-legacy
-              uri: http://pago_service:8084
+              uri: http://pago-service:8084
               predicates:
                 - Path=/payments/**
 
             - id: notificacion-service
-              uri: http://notificacion_service:8085
+              uri: http://notificacion-service:8085
               predicates:
                 - Path=/api/notificaciones/**
 
