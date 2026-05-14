@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: notificacion_service
+    name: notificacion-service
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:rabbitmq}
     port: ${SPRING_RABBITMQ_PORT:5672}

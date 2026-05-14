@@ -4,8 +4,12 @@ import com.mediqueue.cita_service.dto.AppointmentRequest;
 import com.mediqueue.cita_service.dto.AppointmentResponse;
 import com.mediqueue.cita_service.dto.AppointmentUpdateRequest;
 import com.mediqueue.cita_service.dto.AvailabilityResponse;
+import com.mediqueue.cita_service.dto.DoctorValidationRequest;
+import com.mediqueue.cita_service.dto.DoctorValidationResponse;
 import com.mediqueue.cita_service.dto.ExternalDoctorHorarioResponse;
 import com.mediqueue.cita_service.dto.ExternalPacienteResponse;
+import com.mediqueue.cita_service.dto.PatientValidationRequest;
+import com.mediqueue.cita_service.dto.PatientValidationResponse;
 import com.mediqueue.cita_service.entity.Appointment;
 import com.mediqueue.cita_service.entity.AppointmentStatus;
 import com.mediqueue.cita_service.exception.AppointmentConflictException;
@@ -14,6 +18,7 @@ import com.mediqueue.cita_service.exception.ExternalServiceException;
 import com.mediqueue.cita_service.exception.InvalidAppointmentException;
 import com.mediqueue.cita_service.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +47,7 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final AppointmentEventPublisher eventPublisher;
+    private final RabbitTemplate rabbitTemplate;
     private final RestTemplate restTemplate;
 
     @Value("${app.services.patient-url}")
@@ -49,6 +55,15 @@ public class AppointmentService {
 
     @Value("${app.services.doctor-url}")
     private String doctorServiceUrl;
+
+    @Value("${app.rabbitmq.rpc-exchange}")
+    private String rpcExchange;
+
+    @Value("${app.rabbitmq.patient-validation-routing-key}")
+    private String patientValidationRoutingKey;
+
+    @Value("${app.rabbitmq.doctor-validation-routing-key}")
+    private String doctorValidationRoutingKey;
 
     @Transactional
     @CacheEvict(value = "appointmentAvailability", allEntries = true)
@@ -173,38 +188,26 @@ public class AppointmentService {
     }
 
     private void validatePatientExists(String patientId) {
-        try {
-            restTemplate.getForEntity(
-                    patientServiceUrl + "/api/pacientes/{id}",
-                    ExternalPacienteResponse.class,
-                    patientId.trim()
-            );
-        } catch (HttpClientErrorException.NotFound exception) {
+        PatientValidationRequest request = new PatientValidationRequest(patientId);
+        PatientValidationResponse response = (PatientValidationResponse) rabbitTemplate.convertSendAndReceive(
+                rpcExchange,
+                patientValidationRoutingKey,
+                request
+        );
+        if (response == null || !response.exists()) {
             throw new InvalidAppointmentException("Patient does not exist: " + patientId);
-        } catch (HttpClientErrorException.BadRequest exception) {
-            throw new InvalidAppointmentException("Invalid patientId: " + patientId);
-        } catch (RestClientException exception) {
-            throw new ExternalServiceException("Could not validate patient service", exception);
         }
     }
 
     private void validateDoctorHasAvailableSchedule(String doctorId) {
-        try {
-            ExternalDoctorHorarioResponse[] horarios = restTemplate.getForObject(
-                    doctorServiceUrl + "/api/horarios/doctor/{doctorId}?disponible=true",
-                    ExternalDoctorHorarioResponse[].class,
-                    doctorId.trim()
-            );
-            boolean hasAvailableSchedule = horarios != null && Arrays.stream(horarios).anyMatch(ExternalDoctorHorarioResponse::disponible);
-            if (!hasAvailableSchedule) {
-                throw new InvalidAppointmentException("Doctor does not have available schedules: " + doctorId);
-            }
-        } catch (HttpClientErrorException.NotFound exception) {
-            throw new InvalidAppointmentException("Doctor schedule not found: " + doctorId);
-        } catch (HttpClientErrorException.BadRequest exception) {
-            throw new InvalidAppointmentException("Invalid doctorId: " + doctorId);
-        } catch (RestClientException exception) {
-            throw new ExternalServiceException("Could not validate doctor schedule service", exception);
+        DoctorValidationRequest request = new DoctorValidationRequest(doctorId);
+        DoctorValidationResponse response = (DoctorValidationResponse) rabbitTemplate.convertSendAndReceive(
+                rpcExchange,
+                doctorValidationRoutingKey,
+                request
+        );
+        if (response == null || !response.hasAvailableSchedule()) {
+            throw new InvalidAppointmentException("Doctor does not have available schedules: " + doctorId);
         }
     }
 

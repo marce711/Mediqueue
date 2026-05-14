@@ -3,9 +3,9 @@ server:
 
 spring:
   application:
-    name: cita_service
+    name: cita-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres-cita:5432/citaDB}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5433/mediqueueadmin}
     username: ${SPRING_DATASOURCE_USERNAME:mediqueue}
     password: ${SPRING_DATASOURCE_PASSWORD:mediqueue123}
     driver-class-name: org.postgresql.Driver
@@ -65,14 +65,17 @@ management:
 
 app:
   services:
-    patient-url: ${PATIENT_SERVICE_URL:http://paciente_service:8083}
-    doctor-url: ${DOCTOR_SERVICE_URL:http://doctor_horario:8082}
+    patient-url: ${PATIENT_SERVICE_URL:http://paciente-service:8083}
+    doctor-url: ${DOCTOR_SERVICE_URL:http://doctor-horario:8082}
   rabbitmq:
     exchange: mediqueue.appointments.exchange
     appointment-created-queue: mediqueue.appointments.created
     appointment-cancelled-queue: mediqueue.appointments.cancelled
     appointment-created-routing-key: appointments.created
     appointment-cancelled-routing-key: appointments.cancelled
+    rpc-exchange: mediqueue.rpc.exchange
+    patient-validation-routing-key: paciente.validate
+    doctor-validation-routing-key: doctor.validate
 
 logging:
   level:
