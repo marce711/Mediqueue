@@ -89,3 +89,10 @@ Se han definido índices parciales para gestionar la disponibilidad en tiempo re
 
 ## 5. Estado Final
 La base de datos se encuentra **correctamente estructurada y validada**. No se detectan errores sintácticos ni vacíos relacionales en la versión actual del script `init.sql`.
+
+---
+
+## 6. Evolución de la Comunicación (Pendiente)
+Se ha identificado la necesidad de migrar las consultas inter-servicios de REST a RabbitMQ. Esto impactará la base de datos de la siguiente manera:
+- **Redundancia Controlada:** Se evaluará la creación de tablas de "réplica" o "proyección" en `cita_service` para almacenar datos básicos de `pacientes` y `horarios`, permitiendo validaciones locales sin depender de llamadas externas.
+- **Sincronización:** Estas tablas se mantendrán actualizadas mediante el consumo de eventos de RabbitMQ, garantizando consistencia eventual.

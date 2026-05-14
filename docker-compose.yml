@@ -92,12 +92,18 @@ services:
   paciente-service:
     build: ./services/paciente_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: mediqueue
+      SPRING_RABBITMQ_PASSWORD: mediqueue123
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - mediqueue-net
@@ -109,7 +115,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "wget", "-f", "http://localhost:8083/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8083/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -120,12 +126,18 @@ services:
   doctor-horario:
     build: ./services/doctor_horario
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: mediqueue
+      SPRING_RABBITMQ_PASSWORD: mediqueue123
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - mediqueue-net
@@ -137,7 +149,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "wget", "-f", "http://localhost:8082/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -148,7 +160,7 @@ services:
   cita-service:
     build: ./services/cita_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -178,7 +190,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "wget", "-f", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -189,7 +201,7 @@ services:
   pago-service:
     build: ./services/pago_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -213,7 +225,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "wget", "-f", "http://localhost:8084/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8084/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -235,7 +247,7 @@ services:
       - mediqueue-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-f", "http://localhost:8085/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8085/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3

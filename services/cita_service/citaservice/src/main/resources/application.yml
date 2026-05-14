@@ -73,6 +73,9 @@ app:
     appointment-cancelled-queue: mediqueue.appointments.cancelled
     appointment-created-routing-key: appointments.created
     appointment-cancelled-routing-key: appointments.cancelled
+    rpc-exchange: mediqueue.rpc.exchange
+    patient-validation-routing-key: paciente.validate
+    doctor-validation-routing-key: doctor.validate
 
 logging:
   level:
