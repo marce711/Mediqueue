@@ -109,7 +109,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      test: ["CMD", "wget", "-f", "http://localhost:8083/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -137,7 +137,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      test: ["CMD", "wget", "-f", "http://localhost:8082/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -178,7 +178,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "wget", "-f", "http://localhost:8081/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -213,7 +213,7 @@ services:
         delay: 5s
         max_attempts: 3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      test: ["CMD", "wget", "-f", "http://localhost:8084/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
@@ -235,7 +235,7 @@ services:
       - mediqueue-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      test: ["CMD", "wget", "-f", "http://localhost:8085/actuator/health"]
       interval: 15s
       timeout: 10s
       retries: 3
