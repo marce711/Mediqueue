@@ -36,7 +36,7 @@ CREATE TABLE doctores (
 
     CONSTRAINT fk_doctor_especialidad
      FOREIGN KEY (especialidad_id)
-         REFERENCES doctor.especialidades(id),
+         REFERENCES especialidades(id),
 
     CONSTRAINT chk_doctor_estado
      CHECK (estado IN ('ACTIVO','INACTIVO'))
@@ -53,20 +53,20 @@ CREATE TABLE horarios (
 
     CONSTRAINT fk_horario_doctor
         FOREIGN KEY (doctor_id)
-            REFERENCES doctor.doctores(id)
+            REFERENCES doctores(id)
             ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX ux_doctor_horario_activo
-ON cita.citas (doctor_id, fecha_hora)
+ON citas (doctor_id, fecha_hora)
 WHERE estado IN ('PENDIENTE','CONFIRMADA');
 
 CREATE UNIQUE INDEX ux_paciente_horario_activo
-ON cita.citas (paciente_id, fecha_hora)
+ON citas (paciente_id, fecha_hora)
 WHERE estado IN ('PENDIENTE','CONFIRMADA');
 
 CREATE UNIQUE INDEX ux_cita_idempotency
-ON cita.citas (idempotency_key)
+ON citas (idempotency_key)
 WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE pagos (
@@ -86,11 +86,11 @@ CREATE TABLE pagos (
 );
 
 CREATE UNIQUE INDEX ux_pago_cita_exitosa
-ON pago.pagos (cita_id)
+ON pagos (cita_id)
 WHERE estado = 'EXITOSO';
 
 CREATE UNIQUE INDEX ux_pago_idempotency
-ON pago.pagos (idempotency_key)
+ON pagos (idempotency_key)
 WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE outbox_events (
