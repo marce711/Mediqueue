@@ -5,7 +5,7 @@ spring:
   application:
     name: cita-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres-cita:5433/citaDB}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5433/mediqueueadmin}
     username: ${SPRING_DATASOURCE_USERNAME:mediqueue}
     password: ${SPRING_DATASOURCE_PASSWORD:mediqueue123}
     driver-class-name: org.postgresql.Driver

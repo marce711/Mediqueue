@@ -1,96 +1,123 @@
-CREATE DATABASE pacientedb;
-CREATE DATABASE doctordb;
-CREATE DATABASE citadb;
-CREATE DATABASE pagodb;
+CREATE DATABASE mediqueueadmin;
 
-\connect citadb
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-CREATE TABLE IF NOT EXISTS outbox_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    aggregate_id VARCHAR(120) NOT NULL,
-    aggregate_type VARCHAR(80) NOT NULL,
-    event_type VARCHAR(120) NOT NULL,
-    exchange_name VARCHAR(160) NOT NULL,
-    routing_key VARCHAR(160) NOT NULL,
-    payload TEXT NOT NULL,
-    status VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
-    attempts INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    processed_at TIMESTAMP NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_cita_outbox_pending
-    ON outbox_events (status, created_at)
-    WHERE status = 'PENDIENTE';
-
-CREATE TABLE IF NOT EXISTS citas (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    id_paciente VARCHAR(80) NOT NULL,
-    id_doctor VARCHAR(80) NOT NULL,
-    cita_fecha TIMESTAMP NOT NULL,
-    estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
-    idempotency_key VARCHAR(120),
+CREATE TABLE pacientes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dpi VARCHAR(30) NOT NULL UNIQUE,
+    correo VARCHAR(120) NOT NULL UNIQUE,
+    nombre VARCHAR(120) NOT NULL,
+    telefono VARCHAR(30) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'ACTIVO',
     creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMP NOT NULL DEFAULT NOW(),
     version BIGINT NOT NULL DEFAULT 0,
-    CONSTRAINT chk_citas_estado
-        CHECK (estado IN ('PENDIENTE','CONFIRMADO','CANCELADO','COMPLETADO','NO_DISPONIBLE'))
+
+    CONSTRAINT chk_paciente_estado
+        CHECK (estado IN ('ACTIVO','INACTIVO'))
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_citas_idempotency_key
-    ON citas (idempotency_key)
-    WHERE idempotency_key IS NOT NULL;
-
-CREATE UNIQUE INDEX IF NOT EXISTS ux_citas_espacio_doctor_activo
-    ON citas (id_doctor, cita_fecha)
-    WHERE estado IN ('PENDIENTE', 'CONFIRMADO');
-
-CREATE UNIQUE INDEX IF NOT EXISTS ux_citas_espacio_paciente_activo
-    ON citas (id_paciente, cita_fecha)
-    WHERE estado IN ('PENDIENTE', 'CONFIRMADO');
-
-\connect pagodb
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-CREATE TABLE IF NOT EXISTS outbox_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    aggregate_id VARCHAR(120) NOT NULL,
-    aggregate_type VARCHAR(80) NOT NULL,
-    event_type VARCHAR(120) NOT NULL,
-    exchange_name VARCHAR(160) NOT NULL,
-    routing_key VARCHAR(160) NOT NULL,
-    payload TEXT NOT NULL,
-    status VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
-    attempts INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    processed_at TIMESTAMP NULL
+CREATE TABLE especialidades (
+   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+   nombre VARCHAR(100) NOT NULL UNIQUE,
+   descripcion VARCHAR(255),
+   activa BOOLEAN NOT NULL DEFAULT TRUE,
+   creado_en TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_pago_outbox_pending
-    ON outbox_events (status, created_at)
-    WHERE status = 'PENDIENTE';
+CREATE TABLE doctores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    especialidad_id UUID NOT NULL,
+    nombre VARCHAR(120) NOT NULL,
+    telefono VARCHAR(30),
+    correo VARCHAR(120),
+    estado VARCHAR(20) NOT NULL DEFAULT 'ACTIVO',
+    creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+    actualizado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+    version BIGINT NOT NULL DEFAULT 0,
 
-CREATE TABLE IF NOT EXISTS pagos (
-    id BIGSERIAL PRIMARY KEY,
-    id_cita VARCHAR(80) NOT NULL,
-    id_paciente VARCHAR(80) NOT NULL,
-    monto NUMERIC(12,2) NOT NULL CHECK (monto > 0),
+    CONSTRAINT fk_doctor_especialidad
+     FOREIGN KEY (especialidad_id)
+         REFERENCES doctor.especialidades(id),
+
+    CONSTRAINT chk_doctor_estado
+     CHECK (estado IN ('ACTIVO','INACTIVO'))
+);
+
+CREATE TABLE horarios (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    doctor_id UUID NOT NULL,
+    dia_semana VARCHAR(20) NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    disponible BOOLEAN NOT NULL DEFAULT TRUE,
+    creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_horario_doctor
+        FOREIGN KEY (doctor_id)
+            REFERENCES doctor.doctores(id)
+            ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX ux_doctor_horario_activo
+ON cita.citas (doctor_id, fecha_hora)
+WHERE estado IN ('PENDIENTE','CONFIRMADA');
+
+CREATE UNIQUE INDEX ux_paciente_horario_activo
+ON cita.citas (paciente_id, fecha_hora)
+WHERE estado IN ('PENDIENTE','CONFIRMADA');
+
+CREATE UNIQUE INDEX ux_cita_idempotency
+ON cita.citas (idempotency_key)
+WHERE idempotency_key IS NOT NULL;
+
+CREATE TABLE pagos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cita_id UUID NOT NULL,
+    paciente_id UUID NOT NULL,
+    monto NUMERIC(12,2) NOT NULL,
     estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    metodo_pago VARCHAR(30),
+    referencia VARCHAR(120),
     idempotency_key VARCHAR(120),
     creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMP NOT NULL DEFAULT NOW(),
     version BIGINT NOT NULL DEFAULT 0,
-    CONSTRAINT chk_pago_estado
-        CHECK (estado IN ('PENDIENTE','EXITOSO','FALLIDO','DEVUELTO','CANCELADO'))
+
+    CONSTRAINT chk_pago_estado CHECK (estado IN ('PENDIENTE','EXITOSO','FALLIDO','DEVUELTO','CANCELADO'))
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_pagos_idempotency_key
-    ON pagos (idempotency_key)
-    WHERE idempotency_key IS NOT NULL;
+CREATE UNIQUE INDEX ux_pago_cita_exitosa
+ON pago.pagos (cita_id)
+WHERE estado = 'EXITOSO';
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_pagos_cita_exitosa
-    ON pagos (id_cita)
-    WHERE estado = 'SUCCESS';
+CREATE UNIQUE INDEX ux_pago_idempotency
+ON pago.pagos (idempotency_key)
+WHERE idempotency_key IS NOT NULL;
+
+CREATE TABLE outbox_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate_id VARCHAR(120) NOT NULL,
+    aggregate_type VARCHAR(80) NOT NULL,
+    event_type VARCHAR(120) NOT NULL,
+    exchange_name VARCHAR(160) NOT NULL,
+    routing_key VARCHAR(160) NOT NULL,
+    payload TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    attempts INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMP NULL
+);
+
+CREATE TABLE outbox_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate_id VARCHAR(120) NOT NULL,
+    aggregate_type VARCHAR(80) NOT NULL,
+    event_type VARCHAR(120) NOT NULL,
+    exchange_name VARCHAR(160) NOT NULL,
+    routing_key VARCHAR(160) NOT NULL,
+    payload TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    attempts INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMP NULL
+);
+

@@ -41,12 +41,12 @@ services:
     environment:
       POSTGRES_USER: mediqueue
       POSTGRES_PASSWORD: mediqueue123
-      POSTGRES_DB: mediqueue_admin
+      POSTGRES_DB: mediqueueadmin
     ports:
       - "5433:5432"
     volumes:
       - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - postgres_data:/var/lib/postgresql/data
+      #- postgres_data:/var/lib/postgresql/data
     networks:
       - mediqueue-net
     restart: unless-stopped
@@ -92,7 +92,7 @@ services:
   paciente-service:
     build: ./services/paciente_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pacientedb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -103,7 +103,7 @@ services:
       - mediqueue-net
     restart: unless-stopped
     deploy:
-      replicas: 2
+      #replicas: 2
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -120,7 +120,7 @@ services:
   doctor-horario:
     build: ./services/doctor_horario
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/doctordb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -131,7 +131,7 @@ services:
       - mediqueue-net
     restart: unless-stopped
     deploy:
-      replicas: 2
+      #replicas: 2
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -148,7 +148,7 @@ services:
   cita-service:
     build: ./services/cita_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/citadb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -172,7 +172,7 @@ services:
       - mediqueue-net
     restart: unless-stopped
     deploy:
-      replicas: 2
+      #replicas: 2
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -189,7 +189,7 @@ services:
   pago-service:
     build: ./services/pago_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pagodb
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5433/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -207,7 +207,7 @@ services:
       - mediqueue-net
     restart: unless-stopped
     deploy:
-      replicas: 1
+      #replicas: 1
       restart_policy:
         condition: on-failure
         delay: 5s
