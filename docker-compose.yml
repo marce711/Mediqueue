@@ -1,10 +1,13 @@
-
 networks:
   mediqueue-net:
-    driver: bridge
+    driver: overlay
+    attachable: true
 
 volumes:
-  postgres_data:
+  postgres1_data:
+  postgres2_data:
+  postgres3_data:
+  backrest_repo:
   redis_data:
   rabbitmq_data:
   prometheus_data:
@@ -36,25 +39,116 @@ services:
       timeout: 5s
       retries: 3
 
-  postgres:
-    image: postgres:15-alpine
+  etcd:
+    image: public.ecr.aws/bitnami/etcd:3.5
     environment:
-      POSTGRES_USER: mediqueue
-      POSTGRES_PASSWORD: mediqueue123
-      POSTGRES_DB: mediqueueadmin
-    ports:
-      - "5433:5432"
-    volumes:
-      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-      #- postgres_data:/var/lib/postgresql/data
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
     networks:
       - mediqueue-net
-    restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U mediqueue -d mediqueueadmin" ]
+      test: ["CMD", "etcdctl", "endpoint", "health"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  postgres1:
+    build: ./infrastructure/ha-postgres/patroni
+    environment:
+      - NODE_NAME=postgres1
+      - NODE_IP=postgres1
+      - POSTGRES_PASSWORD=mediqueue123
+      - REPLICATION_PASSWORD=replicator123
+      - PATRONI_ETCD_HOSTS=etcd:2379
+      - PATRONI_SCOPE=mediqueue-cluster
+    volumes:
+      - ./infrastructure/ha-postgres/patroni/patroni.yml.template:/home/postgres/patroni.yml.template:ro
+      - ./infrastructure/ha-postgres/patroni/entrypoint.sh:/home/postgres/entrypoint.sh:ro
+      - ./infrastructure/ha-postgres/backrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres1_data:/var/lib/postgresql/data
+      - backrest_repo:/var/lib/pgbackrest
+    entrypoint: ["/bin/bash", "/home/postgres/entrypoint.sh"]
+    networks:
+      - mediqueue-net
+    depends_on:
+      etcd:
+        condition: service_healthy
+
+  postgres2:
+    build: ./infrastructure/ha-postgres/patroni
+    environment:
+      - NODE_NAME=postgres2
+      - NODE_IP=postgres2
+      - POSTGRES_PASSWORD=mediqueue123
+      - REPLICATION_PASSWORD=replicator123
+      - PATRONI_ETCD_HOSTS=etcd:2379
+      - PATRONI_SCOPE=mediqueue-cluster
+    volumes:
+      - ./infrastructure/ha-postgres/patroni/patroni.yml.template:/home/postgres/patroni.yml.template:ro
+      - ./infrastructure/ha-postgres/patroni/entrypoint.sh:/home/postgres/entrypoint.sh:ro
+      - ./infrastructure/ha-postgres/backrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - postgres2_data:/var/lib/postgresql/data
+      - backrest_repo:/var/lib/pgbackrest
+    entrypoint: ["/bin/bash", "/home/postgres/entrypoint.sh"]
+    networks:
+      - mediqueue-net
+    depends_on:
+      etcd:
+        condition: service_healthy
+
+  postgres3:
+    build: ./infrastructure/ha-postgres/patroni
+    environment:
+      - NODE_NAME=postgres3
+      - NODE_IP=postgres3
+      - POSTGRES_PASSWORD=mediqueue123
+      - REPLICATION_PASSWORD=replicator123
+      - PATRONI_ETCD_HOSTS=etcd:2379
+      - PATRONI_SCOPE=mediqueue-cluster
+    volumes:
+      - ./infrastructure/ha-postgres/patroni/patroni.yml.template:/home/postgres/patroni.yml.template:ro
+      - ./infrastructure/ha-postgres/patroni/entrypoint.sh:/home/postgres/entrypoint.sh:ro
+      - ./infrastructure/ha-postgres/backrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - postgres3_data:/var/lib/postgresql/data
+      - backrest_repo:/var/lib/pgbackrest
+    entrypoint: ["/bin/bash", "/home/postgres/entrypoint.sh"]
+    networks:
+      - mediqueue-net
+    depends_on:
+      etcd:
+        condition: service_healthy
+
+  haproxy:
+    image: haproxy:2.8-alpine
+    volumes:
+      - ./infrastructure/ha-postgres/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5433:5432"
+      - "7000:7000" # Stats
+    networks:
+      - mediqueue-net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - postgres1
+      - postgres2
+      - postgres3
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@mediqueue.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - mediqueue-net
+    depends_on:
+      - haproxy
 
   redis:
     image: redis:7-alpine
@@ -92,7 +186,8 @@ services:
   paciente-service:
     build: ./services/paciente_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://haproxy:5432/mediqueueadmin
+      SPRING_DATASOURCE_READ_URL: jdbc:postgresql://haproxy:5433/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -101,7 +196,7 @@ services:
       SPRING_RABBITMQ_USERNAME: mediqueue
       SPRING_RABBITMQ_PASSWORD: mediqueue123
     depends_on:
-      postgres:
+      haproxy:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -109,7 +204,6 @@ services:
       - mediqueue-net
     restart: unless-stopped
     deploy:
-      #replicas: 2
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -126,7 +220,8 @@ services:
   doctor-horario:
     build: ./services/doctor_horario
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://haproxy:5432/mediqueueadmin
+      SPRING_DATASOURCE_READ_URL: jdbc:postgresql://haproxy:5433/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -135,7 +230,7 @@ services:
       SPRING_RABBITMQ_USERNAME: mediqueue
       SPRING_RABBITMQ_PASSWORD: mediqueue123
     depends_on:
-      postgres:
+      haproxy:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -143,7 +238,6 @@ services:
       - mediqueue-net
     restart: unless-stopped
     deploy:
-      #replicas: 2
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -160,7 +254,8 @@ services:
   cita-service:
     build: ./services/cita_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://haproxy:5432/mediqueueadmin
+      SPRING_DATASOURCE_READ_URL: jdbc:postgresql://haproxy:5433/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -174,7 +269,7 @@ services:
       PATIENT_SERVICE_URL: http://paciente-service:8083
       DOCTOR_SERVICE_URL: http://doctor-horario:8082
     depends_on:
-      postgres:
+      haproxy:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -184,7 +279,6 @@ services:
       - mediqueue-net
     restart: unless-stopped
     deploy:
-      #replicas: 2
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -201,7 +295,8 @@ services:
   pago-service:
     build: ./services/pago_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://haproxy:5432/mediqueueadmin
+      SPRING_DATASOURCE_READ_URL: jdbc:postgresql://haproxy:5433/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -211,7 +306,7 @@ services:
       SPRING_RABBITMQ_PUBLISHER_CONFIRM_TYPE: correlated
       SPRING_RABBITMQ_PUBLISHER_RETURNS: "true"
     depends_on:
-      postgres:
+      haproxy:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -219,7 +314,6 @@ services:
       - mediqueue-net
     restart: unless-stopped
     deploy:
-      #replicas: 1
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -272,7 +366,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin123
@@ -285,3 +379,14 @@ services:
     restart: unless-stopped
     depends_on:
       - prometheus
+
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    networks:
+      - mediqueue-net
+    depends_on:
+      - api-gateway

@@ -1,4 +1,4 @@
-# Plan de Migración de Comunicación REST a RabbitMQ
+m# Plan de Migración de Comunicación REST a RabbitMQ
 
 Este documento detalla la estrategia para migrar las consultas síncronas entre microservicios (actualmente vía REST) hacia una arquitectura orientada a eventos utilizando RabbitMQ.
 
