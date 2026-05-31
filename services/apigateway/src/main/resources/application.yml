@@ -5,41 +5,79 @@ spring:
   application:
     name: api-gateway
 
+  rabbitmq:
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:100.76.170.62,100.115.210.113,100.99.158.11}
+    username: ${SPRING_RABBITMQ_USERNAME:mediqueue}
+    password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
+
   cloud:
     gateway:
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 5s
       server:
         webmvc:
           routes:
 
             - id: paciente-service
-              uri: http://paciente-service:8083
+              uri: http://100.76.170.62:8083 # Nodo 1
               predicates:
                 - Path=/api/pacientes/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: pacienteCB
+                    fallbackUri: forward:/fallback/paciente
 
             - id: cita-service
-              uri: http://cita-service:8081
+              uri: http://100.115.210.113:8081 # Nodo 2
               predicates:
                 - Path=/api/v1/appointments/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: citaCB
 
             - id: doctor-horario
-              uri: http://doctor-horario:8082
+              uri: http://100.115.210.113:8082 # Nodo 2
               predicates:
                 - Path=/api/horarios/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: doctorCB
 
             - id: pago-service
-              uri: http://pago-service:8084
+              uri: http://100.99.158.11:8084 # Nodo 3
               predicates:
                 - Path=/api/payments/**
-
-            - id: pago-service-legacy
-              uri: http://pago-service:8084
-              predicates:
-                - Path=/payments/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: pagoCB
 
             - id: notificacion-service
-              uri: http://notificacion-service:8085
+              uri: http://100.99.158.11:8085 # Nodo 3
               predicates:
                 - Path=/api/notificaciones/**
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      pacienteCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+      citaCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+      doctorCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+      pagoCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
 
 management:
   endpoints:

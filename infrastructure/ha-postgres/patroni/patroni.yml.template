@@ -7,7 +7,7 @@ restapi:
   connect_address: "${NODE_IP}:8008"
 
 etcd:
-  host: etcd:2379
+  hosts: "${PATRONI_ETCD_HOSTS}"
 
 bootstrap:
   dcs:

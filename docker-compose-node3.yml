@@ -1,0 +1,105 @@
+# CONFIGURACIÓN PARA EL NODO 3 (Computadora C)
+# IP: 100.99.158.11
+
+services:
+  etcd:
+    image: public.ecr.aws/bitnami/etcd:3.5
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_NAME=node3
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://100.99.158.11:2380
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=http://100.99.158.11:2379
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster-mediqueue
+      - ETCD_INITIAL_CLUSTER=node1=http://100.76.170.62:2380,node2=http://100.115.210.113:2380,node3=http://100.99.158.11:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    restart: always
+
+  postgres3:
+    build: ./infrastructure/ha-postgres/patroni
+    environment:
+      - NODE_NAME=postgres3
+      - NODE_IP=100.99.158.11
+      - POSTGRES_PASSWORD=mediqueue123
+      - REPLICATION_PASSWORD=replicator123
+      - PATRONI_ETCD_HOSTS=100.76.170.62:2379,100.115.210.113:2379,100.99.158.11:2379
+      - PATRONI_SCOPE=mediqueue-cluster
+      - PATRONI_NAME=postgres3
+    volumes:
+      - ./infrastructure/ha-postgres/patroni/patroni.yml.template:/home/postgres/patroni.yml.template:ro
+      - ./infrastructure/ha-postgres/patroni/entrypoint.sh:/home/postgres/entrypoint.sh:ro
+      - postgres3_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+      - "8008:8008"
+    restart: always
+
+  haproxy:
+    image: haproxy:2.8-alpine
+    volumes:
+      - ./infrastructure/ha-postgres/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5000:5432"
+      - "5001:5433"
+      - "7000:7000"
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=MEDIQUEUE_COOKIE
+      - RABBITMQ_NODENAME=rabbit@node3
+      - RABBITMQ_DEFAULT_USER=mediqueue
+      - RABBITMQ_DEFAULT_PASS=mediqueue123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "4369:4369"
+      - "25672:25672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    restart: always
+
+  redis-sentinel:
+    image: bitnami/redis-sentinel:7.0
+    environment:
+      - REDIS_SENTINEL_QUORUM=2
+      - REDIS_MASTER_NAME=mymaster
+      - REDIS_MASTER_HOST=100.76.170.62
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_SENTINEL_PORT_NUMBER=26379
+    ports:
+      - "26379:26379"
+    restart: always
+
+  pago-service:
+    build: ./services/pago_service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5000/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
+    ports:
+      - "8084:8084"
+    restart: always
+
+  notificacion-service:
+    build: ./services/notificacion_service
+    environment:
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
+    ports:
+      - "8085:8085"
+    restart: always
+
+volumes:
+  postgres3_data:
+  rabbitmq_data:
