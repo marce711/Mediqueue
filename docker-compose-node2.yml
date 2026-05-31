@@ -86,7 +86,7 @@ services:
   cita-service:
     build: ./services/cita_service
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5000/mediqueueadmin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
       - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
       - SPRING_DATA_REDIS_SENTINEL_MASTER=mymaster
       - SPRING_DATA_REDIS_SENTINEL_NODES=100.76.170.62:26379,100.115.210.113:26379,100.99.158.11:26379
@@ -97,7 +97,7 @@ services:
   doctor-horario:
     build: ./services/doctor_horario
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5000/mediqueueadmin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
       - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
     ports:
       - "8082:8082"

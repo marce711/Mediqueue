@@ -87,7 +87,7 @@ services:
     build: ./services/apigateway
     environment:
       - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5000/mediqueueadmin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
     ports:
       - "8080:8080"
     restart: always
@@ -95,7 +95,7 @@ services:
   paciente-service:
     build: ./services/paciente_service
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5000/mediqueueadmin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
       - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
     ports:
       - "8083:8083"

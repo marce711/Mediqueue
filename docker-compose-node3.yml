@@ -86,7 +86,7 @@ services:
   pago-service:
     build: ./services/pago_service
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5000/mediqueueadmin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
       - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
     ports:
       - "8084:8084"
