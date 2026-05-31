@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { citaService, pacienteService } from '../services/api';
-import { CalendarPlus, Search, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { citaService, pacienteService, doctorService } from '../services/api';
+import { CalendarPlus, Search, Clock, CheckCircle, XCircle, User, Activity } from 'lucide-react';
 
 export default function Citas() {
   const [citas, setCitas] = useState([]);
+  const [doctores, setDoctores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchDpi, setSearchDpi] = useState('');
   const [pacienteFound, setPacienteFound] = useState(null);
   const [form, setForm] = useState({ 
     patientId: '', 
-    doctorId: 'DOC-001', // Placeholder hasta tener listado de doctores funcional
+    doctorId: '', 
     appointmentDate: '',
     reason: '' 
   });
@@ -17,6 +18,7 @@ export default function Citas() {
 
   useEffect(() => {
     fetchCitas();
+    fetchDoctores();
   }, []);
 
   const fetchCitas = async () => {
@@ -31,6 +33,15 @@ export default function Citas() {
     }
   };
 
+  const fetchDoctores = async () => {
+    try {
+      const res = await doctorService.listar();
+      setDoctores(res.data);
+    } catch (err) {
+      console.error('Error cargando doctores:', err);
+    }
+  };
+
   const handleSearchPaciente = async () => {
     try {
       const res = await pacienteService.obtenerPorDpi(searchDpi);
@@ -39,179 +50,179 @@ export default function Citas() {
       setMessage(null);
     } catch (err) {
       setPacienteFound(null);
-      setMessage({ type: 'error', text: 'Paciente no encontrado' });
+      setMessage({ type: 'error', text: 'El paciente con el DPI ingresado no existe en el sistema.' });
     }
   };
 
   const handleCreateCita = async (e) => {
     e.preventDefault();
+    if (!form.patientId) {
+      setMessage({ type: 'error', text: 'Debe validar un paciente antes de agendar.' });
+      return;
+    }
+    
     try {
-      // 1. Verificar disponibilidad (Lógica estricta conectada al backend)
-      const availability = await citaService.verificarDisponibilidad(form.doctorId, form.appointmentDate);
-      if (!availability.data.available) {
-        setMessage({ type: 'error', text: 'El horario no está disponible' });
-        return;
-      }
-
-      // 2. Crear cita
-      await citaService.crear({
-        ...form,
-        appointmentDate: new Date(form.appointmentDate).toISOString()
-      });
-      
-      setMessage({ type: 'success', text: 'Cita agendada. Validando en segundo plano via RabbitMQ...' });
-      setForm({ patientId: '', doctorId: 'DOC-001', appointmentDate: '', reason: '' });
+      setLoading(true);
+      const res = await citaService.crear(form);
+      setMessage({ type: 'success', text: `Cita agendada exitosamente. ID de seguimiento: ${res.data.id}` });
+      setForm({ patientId: '', doctorId: '', appointmentDate: '', reason: '' });
       setPacienteFound(null);
       setSearchDpi('');
-      setTimeout(fetchCitas, 2000); // Dar tiempo a RabbitMQ para procesar
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Error al agendar la cita' });
-    }
-  };
-
-  const handleCancel = async (id) => {
-    try {
-      await citaService.cancelar(id);
       fetchCitas();
     } catch (err) {
-      console.error(err);
+      setMessage({ type: 'error', text: 'Error al agendar la cita. Verifique la disponibilidad del horario.' });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h2 className="text-3xl font-bold text-gray-800">Agendamiento de Citas</h2>
-        <p className="text-gray-500">Gestión de turnos y disponibilidad médica.</p>
+    <div className="max-w-6xl mx-auto space-y-10 py-6">
+      <header className="border-b border-gray-200 pb-6">
+        <h2 className="text-2xl font-semibold text-gray-900">Agenda de Citas Médicas</h2>
+        <p className="text-gray-500 mt-1">Control de citas, validación de disponibilidad y asignación de especialistas.</p>
       </header>
 
-      {message && (
-        <div className={`p-4 rounded-lg shadow-sm border ${message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
-          {message.text}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Formulario de Agendamiento */}
-        <section className="xl:col-span-1 space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Search size={18} className="text-indigo-600" />
-              1. Identificar Paciente
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Panel de Agendamiento */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-medium text-gray-900 mb-6 flex items-center gap-2">
+              <CalendarPlus size={20} className="text-blue-600" />
+              Agendar Nueva Cita
             </h3>
-            <div className="flex gap-2">
-              <input 
-                type="text" 
-                placeholder="DPI del paciente"
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50 p-2 text-sm"
-                value={searchDpi}
-                onChange={e => setSearchDpi(e.target.value)}
-              />
-              <button 
-                onClick={handleSearchPaciente}
-                className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 transition"
-              >
-                Buscar
-              </button>
+
+            <div className="space-y-4">
+              {/* Buscador de Paciente */}
+              <div className="pb-4 border-b border-gray-100">
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Validar Paciente (DPI)</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Ingrese DPI"
+                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm border"
+                    value={searchDpi}
+                    onChange={e => setSearchDpi(e.target.value)}
+                  />
+                  <button 
+                    onClick={handleSearchPaciente}
+                    className="p-2 bg-gray-100 rounded-md hover:bg-gray-200 text-gray-600"
+                  >
+                    <Search size={18} />
+                  </button>
+                </div>
+                {pacienteFound && (
+                  <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-100 flex items-center gap-2">
+                    <User size={14} className="text-blue-600" />
+                    <span className="text-xs font-medium text-blue-800">{pacienteFound.nombre}</span>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleCreateCita} className="space-y-4 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Especialista</label>
+                  <select 
+                    required
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border bg-white"
+                    value={form.doctorId}
+                    onChange={e => setForm({...form, doctorId: e.target.value})}
+                  >
+                    <option value="">Seleccione un doctor...</option>
+                    {doctores.map(doc => (
+                      <option key={doc.id_doctor} value={doc.id_doctor}>{doc.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Fecha y Hora</label>
+                  <input 
+                    required
+                    type="datetime-local" 
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border"
+                    value={form.appointmentDate}
+                    onChange={e => setForm({...form, appointmentDate: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Motivo de Consulta</label>
+                  <textarea 
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border"
+                    rows="3"
+                    value={form.reason}
+                    onChange={e => setForm({...form, reason: e.target.value})}
+                  ></textarea>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition font-medium text-sm shadow-sm disabled:opacity-50"
+                >
+                  {loading ? 'Procesando...' : 'Confirmar Cita'}
+                </button>
+              </form>
+
+              {message && (
+                <div className={`p-4 rounded-md text-sm ${
+                  message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {message.text}
+                </div>
+              )}
             </div>
-            {pacienteFound && (
-              <div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm border border-indigo-100">
-                <p className="font-bold text-indigo-900">{pacienteFound.nombre}</p>
-                <p className="text-indigo-700">DPI: {pacienteFound.dpi}</p>
+          </div>
+        </div>
+
+        {/* Listado de Citas */}
+        <div className="lg:col-span-2 space-y-6">
+          <h3 className="text-lg font-medium text-gray-900">Agenda del Día</h3>
+          
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead className="bg-gray-50 text-gray-500">
+                <tr>
+                  <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider">Fecha / Hora</th>
+                  <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider">Paciente</th>
+                  <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider">Especialista</th>
+                  <th className="px-6 py-4 text-center font-semibold uppercase tracking-wider">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {citas.map(cita => (
+                  <tr key={cita.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900 flex items-center gap-2">
+                        <Clock size={14} className="text-blue-500" />
+                        {new Date(cita.appointmentDate).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-400 font-mono mt-1">Ref: {cita.id.substring(0,8)}</div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-700 font-medium">ID: {cita.patientId.substring(0,8)}...</td>
+                    <td className="px-6 py-4 text-gray-700">ID: {cita.doctorId.substring(0,8)}...</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+                        cita.status === 'CONFIRMED' ? 'bg-green-100 text-green-800 border-green-200' : 
+                        cita.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border-red-200' : 
+                        'bg-blue-100 text-blue-800 border-blue-200'
+                      }`}>
+                        {cita.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {citas.length === 0 && !loading && (
+              <div className="py-20 text-center text-gray-400 italic flex flex-col items-center gap-2">
+                <Activity size={32} className="text-gray-200" />
+                No hay citas agendadas para este periodo.
               </div>
             )}
           </div>
-
-          <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-opacity ${!pacienteFound ? 'opacity-50 pointer-events-none' : ''}`}>
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <CalendarPlus size={18} className="text-indigo-600" />
-              2. Datos de la Cita
-            </h3>
-            <form onSubmit={handleCreateCita} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase">Doctor / Especialidad</label>
-                <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50 p-2 text-sm">
-                  <option value="DOC-001">Dr. Mario Perez - Medicina General</option>
-                  <option value="DOC-002">Dra. Ana Gomez - Pediatría</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase">Fecha y Hora</label>
-                <input 
-                  type="datetime-local" 
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50 p-2 text-sm"
-                  value={form.appointmentDate}
-                  onChange={e => setForm({...form, appointmentDate: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase">Motivo</label>
-                <textarea 
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-gray-50 p-2 text-sm"
-                  rows="2"
-                  value={form.reason}
-                  onChange={e => setForm({...form, reason: e.target.value})}
-                ></textarea>
-              </div>
-              <button 
-                type="submit" 
-                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-semibold"
-              >
-                Confirmar Reserva
-              </button>
-            </form>
-          </div>
-        </section>
-
-        {/* Listado de Citas */}
-        <section className="xl:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 border-b pb-4">
-            <Clock size={20} className="text-indigo-600" />
-            Agenda del Sistema
-          </h3>
-          {loading ? (
-            <div className="text-center py-20 text-gray-400">Consultando agenda...</div>
-          ) : (
-            <div className="space-y-4">
-              {citas.map(cita => (
-                <div key={cita.id} className="flex items-center justify-between p-4 rounded-lg border border-gray-50 hover:bg-gray-50 transition-colors">
-                  <div className="flex gap-4 items-center">
-                    <div className={`p-2 rounded-full ${cita.status === 'CONFIRMADA' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}`}>
-                      {cita.status === 'CONFIRMADA' ? <CheckCircle size={20} /> : <Clock size={20} />}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900">Paciente ID: {cita.patientId.substring(0,8)}...</h4>
-                      <p className="text-sm text-gray-500">
-                        {new Date(cita.appointmentDate).toLocaleString()} - {cita.reason || 'Consulta general'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      cita.status === 'CONFIRMADA' ? 'bg-green-100 text-green-700' : 
-                      cita.status === 'CANCELADA' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {cita.status}
-                    </span>
-                    {cita.status !== 'CANCELADA' && (
-                      <button 
-                        onClick={() => handleCancel(cita.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors"
-                        title="Cancelar cita"
-                      >
-                        <XCircle size={20} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {citas.length === 0 && (
-                <div className="text-center py-20 text-gray-400 italic">No hay citas agendadas para este periodo.</div>
-              )}
-            </div>
-          )}
-        </section>
+        </div>
       </div>
     </div>
   );

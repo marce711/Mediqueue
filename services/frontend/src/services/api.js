@@ -35,6 +35,7 @@ export const citaService = {
 
 export const pagoService = {
   listarPorPaciente: (pacienteId) => api.get(`/api/payments/paciente/${pacienteId}`),
+  obtenerPorCita: (appointmentId) => api.get(`/api/payments/appointment/${appointmentId}`),
   procesar: (data) => api.post('/api/payments', data),
 };
 

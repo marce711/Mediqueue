@@ -102,6 +102,16 @@ services:
       - "8083:8083"
     restart: always
 
+  frontend:
+    build: ./services/frontend
+    environment:
+      - VITE_API_URL=http://100.76.170.62:8080
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    restart: always
+
 volumes:
   postgres1_data:
   rabbitmq_data:
