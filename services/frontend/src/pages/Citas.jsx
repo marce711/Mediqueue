@@ -130,7 +130,7 @@ export default function Citas() {
                   >
                     <option value="">Seleccione un doctor...</option>
                     {doctores.map(doc => (
-                      <option key={doc.id_doctor} value={doc.id_doctor}>{doc.nombre}</option>
+                      <option key={doc.id} value={doc.id}>{doc.nombre} - {doc.especialidad}</option>
                     ))}
                   </select>
                 </div>

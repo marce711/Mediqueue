@@ -7,7 +7,7 @@ Asegurarse de que las 3 computadoras tengan Tailscale instalado y se vean entre 
 En este ejemplo usamos las siguientes IPs (DEBES REEMPLAZARLAS EN LOS ARCHIVOS .yml):
 - **Nodo 1 (Computadora A):** 100.76.170.62
 - **Nodo 2 (Computadora B):** 100.115.210.113
-- **Nodo 3 (Computadora C):** 100.99.158.11
+- **Nodo 3 (Computadora C):** 100.99.158.111
 
 ## 2. Archivos de Despliegue
 He creado 3 archivos Docker Compose específicos:

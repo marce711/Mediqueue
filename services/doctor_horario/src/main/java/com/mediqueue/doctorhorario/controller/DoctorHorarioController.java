@@ -3,6 +3,9 @@ package com.mediqueue.doctorhorario.controller;
 import com.mediqueue.doctorhorario.dto.DisponibilidadRequest;
 import com.mediqueue.doctorhorario.dto.DoctorHorarioRequest;
 import com.mediqueue.doctorhorario.dto.DoctorHorarioResponse;
+import com.mediqueue.doctorhorario.dto.DoctorRequest;
+import com.mediqueue.doctorhorario.dto.DoctorResponse;
+import com.mediqueue.doctorhorario.service.DoctorService;
 import com.mediqueue.doctorhorario.service.DoctorHorarioService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -32,9 +35,24 @@ public class DoctorHorarioController {
     private static final Logger logger = LoggerFactory.getLogger(DoctorHorarioController.class);
 
     private final DoctorHorarioService service;
+    private final DoctorService doctorService;
 
-    public DoctorHorarioController(DoctorHorarioService service) {
+    public DoctorHorarioController(DoctorHorarioService service, DoctorService doctorService) {
         this.service = service;
+        this.doctorService = doctorService;
+    }
+
+    @PostMapping("/doctores")
+    public ResponseEntity<DoctorResponse> crearDoctor(@Valid @RequestBody DoctorRequest request) {
+        logger.info("POST /api/horarios/doctores recibido. nombre={}, especialidad={}",
+                request.nombre(), request.especialidad());
+        return ResponseEntity.status(HttpStatus.CREATED).body(doctorService.crear(request));
+    }
+
+    @GetMapping("/doctores")
+    public ResponseEntity<List<DoctorResponse>> listarDoctores() {
+        logger.info("GET /api/horarios/doctores recibido");
+        return ResponseEntity.ok(doctorService.listar());
     }
 
     @PostMapping

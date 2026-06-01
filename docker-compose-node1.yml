@@ -13,7 +13,7 @@ services:
       - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
       - ETCD_ADVERTISE_CLIENT_URLS=http://100.76.170.62:2379
       - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster-mediqueue
-      - ETCD_INITIAL_CLUSTER=node1=http://100.76.170.62:2380,node2=http://100.115.210.113:2380,node3=http://100.99.158.11:2380
+      - ETCD_INITIAL_CLUSTER=node1=http://100.76.170.62:2380,node2=http://100.115.210.113:2380,node3=http://100.99.158.111:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
     ports:
       - "2379:2379"
@@ -28,7 +28,7 @@ services:
       - POSTGRES_PASSWORD=mediqueue123
       - POSTGRES_APP_PASSWORD=mediqueue123
       - REPLICATION_PASSWORD=replicator123
-      - PATRONI_ETCD_HOSTS=100.76.170.62:2379,100.115.210.113:2379,100.99.158.11:2379
+      - PATRONI_ETCD_HOSTS=100.76.170.62:2379,100.115.210.113:2379,100.99.158.111:2379
       - PATRONI_SCOPE=mediqueue-cluster
       - PATRONI_NAME=postgres1
     volumes:
@@ -90,12 +90,12 @@ services:
   api-gateway:
     build: ./services/apigateway
     environment:
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.11:5672
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.111:5672
       - PACIENTE_SERVICE_URL=http://100.76.170.62:8083
       - CITA_SERVICE_URL=http://100.115.210.113:8081
       - DOCTOR_SERVICE_URL=http://100.115.210.113:8082
-      - PAGO_SERVICE_URL=http://100.99.158.11:8084
-      - NOTIFICACION_SERVICE_URL=http://100.99.158.11:8085
+      - PAGO_SERVICE_URL=http://100.99.158.111:8084
+      - NOTIFICACION_SERVICE_URL=http://100.99.158.111:8085
     ports:
       - "8080:8080"
     depends_on:
@@ -106,7 +106,7 @@ services:
     build: ./services/paciente_service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.11:5672
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.111:5672
     ports:
       - "8083:8083"
     depends_on:
@@ -116,14 +116,36 @@ services:
 
   frontend:
     build: ./services/frontend
-    environment:
-      - VITE_API_URL=http://100.76.170.62:8080
     ports:
       - "80:80"
     depends_on:
       - api-gateway
     restart: always
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: always
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: always
+
 volumes:
   postgres1_data:
   rabbitmq_data:
+  prometheus_data:
+  grafana_data:

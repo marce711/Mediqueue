@@ -9,6 +9,8 @@ public interface DoctorHorarioRepository extends JpaRepository<DoctorHorario, Lo
 
     List<DoctorHorario> findByDoctorId(Long doctorId);
 
+    List<DoctorHorario> findByDoctorIdOrderByDiaSemanaAscHoraInicioAsc(Long doctorId);
+
     List<DoctorHorario> findByDisponibleTrue();
 
     List<DoctorHorario> findByDisponibleFalse();

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, CreditCard, LayoutGrid, Users } from 'lucide-react';
+import { Calendar, CreditCard, LayoutGrid, UserRound, Users } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -18,13 +18,21 @@ export default function Dashboard() {
           <LayoutGrid size={20} className="text-[#2f6f62]" />
           Operaciones frecuentes
         </h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <NavLink to="/pacientes" className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:ring-[#2f6f62]">
             <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-[#e0eee8] text-[#12312b]">
               <Users />
             </div>
             <p className="text-lg font-bold text-slate-950">Registrar paciente</p>
             <p className="mt-2 text-sm text-slate-600">Alta de expediente clinico y datos de contacto.</p>
+          </NavLink>
+
+          <NavLink to="/doctores" className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:ring-[#2f6f62]">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-[#f2e8dc] text-[#664318]">
+              <UserRound />
+            </div>
+            <p className="text-lg font-bold text-slate-950">Registrar doctor</p>
+            <p className="mt-2 text-sm text-slate-600">Alta de especialistas y bloques de atencion.</p>
           </NavLink>
 
           <NavLink to="/citas" className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:ring-[#2f6f62]">

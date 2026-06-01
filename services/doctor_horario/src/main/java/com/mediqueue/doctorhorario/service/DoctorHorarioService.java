@@ -7,6 +7,7 @@ import com.mediqueue.doctorhorario.entity.DoctorHorario;
 import com.mediqueue.doctorhorario.exception.DoctorHorarioNotFoundException;
 import com.mediqueue.doctorhorario.exception.InvalidHorarioException;
 import com.mediqueue.doctorhorario.repository.DoctorHorarioRepository;
+import com.mediqueue.doctorhorario.repository.DoctorRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,9 +22,11 @@ public class DoctorHorarioService {
     private static final Logger logger = LoggerFactory.getLogger(DoctorHorarioService.class);
 
     private final DoctorHorarioRepository repository;
+    private final DoctorRepository doctorRepository;
 
-    public DoctorHorarioService(DoctorHorarioRepository repository) {
+    public DoctorHorarioService(DoctorHorarioRepository repository, DoctorRepository doctorRepository) {
         this.repository = repository;
+        this.doctorRepository = doctorRepository;
     }
 
     @Transactional
@@ -31,6 +34,7 @@ public class DoctorHorarioService {
         logger.info("Iniciando transaccion de creacion de horario. doctorId={}", request.doctorId());
         try {
             validarRangoHorario(request.horaInicio(), request.horaFin());
+            validarDoctorActivo(request.doctorId());
             logger.debug("Rango horario validado para creacion. horaInicio={}, horaFin={}",
                     request.horaInicio(), request.horaFin());
 
@@ -127,6 +131,7 @@ public class DoctorHorarioService {
         logger.info("Iniciando transaccion de actualizacion de horario. horarioId={}", id);
         try {
             validarRangoHorario(request.horaInicio(), request.horaFin());
+            validarDoctorActivo(request.doctorId());
             logger.debug("Rango horario validado para actualizacion. horarioId={}, horaInicio={}, horaFin={}",
                     id, request.horaInicio(), request.horaFin());
 
@@ -197,6 +202,12 @@ public class DoctorHorarioService {
         if (!horaInicio.isBefore(horaFin)) {
             logger.warn("Rango horario invalido. horaInicio={}, horaFin={}", horaInicio, horaFin);
             throw new InvalidHorarioException("horaInicio debe ser anterior a horaFin");
+        }
+    }
+
+    private void validarDoctorActivo(Long doctorId) {
+        if (doctorId == null || !doctorRepository.existsById(doctorId)) {
+            throw new InvalidHorarioException("doctorId no existe");
         }
     }
 

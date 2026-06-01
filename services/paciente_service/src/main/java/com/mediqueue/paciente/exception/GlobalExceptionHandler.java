@@ -29,6 +29,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "No se pudo guardar el paciente por restricciones de datos", request, null);
     }
 
+    @ExceptionHandler(PacienteConflictException.class)
+    public ResponseEntity<ErrorResponse> handlePacienteConflict(PacienteConflictException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request, null);
+    }
+
     @ExceptionHandler({
             HttpMessageNotReadableException.class,
             MethodArgumentTypeMismatchException.class

@@ -16,7 +16,8 @@ export const pacienteService = {
 };
 
 export const doctorService = {
-  listar: () => api.get('/api/horarios/doctores'), // Asumiendo estructura basada en controller
+  listar: () => api.get('/api/horarios/doctores'),
+  crear: (data) => api.post('/api/horarios/doctores', data),
   obtenerHorarios: (doctorId) => api.get(`/api/horarios/doctor/${doctorId}`),
 };
 

@@ -32,7 +32,10 @@ export default function Pacientes() {
       setForm({ dpi: '', nombre: '', telefono: '', correo: '' });
       fetchPacientes();
     } catch (err) {
-      const detail = err.response?.data?.error || err.response?.data?.message;
+      const validationErrors = err.response?.data?.validationErrors;
+      const detail = validationErrors
+        ? Object.values(validationErrors).join(' ')
+        : err.response?.data?.message || err.response?.data?.error;
       setMessage({ type: 'error', text: detail || 'Error al procesar el registro. Verifique DPI, correo y telefono.' });
     }
   };

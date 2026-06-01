@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface PacienteRepository extends JpaRepository<Paciente, Long> {
     Optional<Paciente> findByDpi(String dpi);
+    boolean existsByDpi(String dpi);
+    boolean existsByCorreo(String correo);
 }

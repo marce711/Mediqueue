@@ -1,10 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { Calendar, CreditCard, LayoutDashboard, Stethoscope, Users } from 'lucide-react';
+import { Calendar, CreditCard, LayoutDashboard, Stethoscope, UserRound, Users } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Pacientes from './pages/Pacientes';
 import Citas from './pages/Citas';
 import Pagos from './pages/Pagos';
+import Doctores from './pages/Doctores';
 
 function App() {
   return (
@@ -21,9 +22,10 @@ function App() {
             </div>
           </div>
 
-          <nav className="grid gap-2 sm:grid-cols-4 lg:grid-cols-1">
+          <nav className="grid gap-2 sm:grid-cols-5 lg:grid-cols-1">
             <SidebarLink to="/" icon={<LayoutDashboard size={20} />} label="Inicio" />
             <SidebarLink to="/pacientes" icon={<Users size={20} />} label="Pacientes" />
+            <SidebarLink to="/doctores" icon={<UserRound size={20} />} label="Doctores" />
             <SidebarLink to="/citas" icon={<Calendar size={20} />} label="Citas" />
             <SidebarLink to="/pagos" icon={<CreditCard size={20} />} label="Pagos" />
           </nav>
@@ -33,6 +35,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/pacientes" element={<Pacientes />} />
+            <Route path="/doctores" element={<Doctores />} />
             <Route path="/citas" element={<Citas />} />
             <Route path="/pagos" element={<Pagos />} />
           </Routes>

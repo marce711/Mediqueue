@@ -3,6 +3,7 @@ package com.mediqueue.paciente.service;
 import com.mediqueue.paciente.dto.PacienteRequest;
 import com.mediqueue.paciente.dto.PacienteResponse;
 import com.mediqueue.paciente.entity.Paciente;
+import com.mediqueue.paciente.exception.PacienteConflictException;
 import com.mediqueue.paciente.exception.PacienteNotFoundException;
 import com.mediqueue.paciente.repository.PacienteRepository;
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ public class PacienteService {
 
     public PacienteResponse obtenerPorDpi(String dpi) {
         logger.debug("Consultando paciente por dpi");
-        Paciente paciente = repository.findByDpi(dpi)
+        Paciente paciente = repository.findByDpi(normalize(dpi))
                 .orElseThrow(() -> new PacienteNotFoundException("Paciente no encontrado con dpi solicitado"));
         return toResponse(paciente);
     }
@@ -51,11 +52,23 @@ public class PacienteService {
     public PacienteResponse guardar(PacienteRequest request) {
         logger.debug("Persistiendo nuevo paciente");
         try {
+            String dpi = normalize(request.dpi());
+            String correo = normalize(request.correo()).toLowerCase();
+            String nombre = normalize(request.nombre());
+            String telefono = normalize(request.telefono());
+
+            if (repository.existsByDpi(dpi)) {
+                throw new PacienteConflictException("Ya existe un paciente registrado con ese DPI");
+            }
+            if (repository.existsByCorreo(correo)) {
+                throw new PacienteConflictException("Ya existe un paciente registrado con ese correo");
+            }
+
             Paciente paciente = new Paciente();
-            paciente.setDpi(request.dpi());
-            paciente.setCorreo(request.correo());
-            paciente.setNombre(request.nombre());
-            paciente.setTelefono(request.telefono());
+            paciente.setDpi(dpi);
+            paciente.setCorreo(correo);
+            paciente.setNombre(nombre);
+            paciente.setTelefono(telefono);
 
             Paciente pacienteGuardado = repository.save(paciente);
             logger.info("Paciente persistido correctamente. pacienteId={}", pacienteGuardado.getId());
@@ -64,6 +77,10 @@ public class PacienteService {
             logger.error("Error al persistir paciente", ex);
             throw ex;
         }
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private PacienteResponse toResponse(Paciente paciente) {

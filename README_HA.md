@@ -1,109 +1,97 @@
-# Guía de Alta Disponibilidad y Backups - Mediqueue
+# Guia de alta disponibilidad - Mediqueue
 
-Este proyecto ahora utiliza **Patroni** para gestionar un cluster de PostgreSQL altamente disponible, con **etcd** como DCS (Distributed Configuration Store) y **HAProxy** como balanceador de carga.
+El despliegue objetivo usa Docker Compose en 3 maquinas independientes. No usa orquestador externo.
 
-## Componentes del Cluster
+## Nodos
 
-1.  **etcd**: Almacena el estado del cluster y realiza la elección del líder.
-2.  **postgres1, postgres2, postgres3**: Nodos de base de datos gestionados por Patroni.
-3.  **HAProxy**: Punto de entrada único para las aplicaciones (Puerto 5433 externamente, 5432 internamente). Siempre redirige al nodo líder actual.
-4.  **pgAdmin**: Interfaz web para gestionar las bases de datos (Puerto 5050).
-5.  **pgBackRest**: Herramienta para backups incrementales.
+- Nodo 1: `100.76.170.62`, gateway, frontend, paciente-service, PostgreSQL/Patroni, HAProxy, RabbitMQ, Redis Sentinel.
+- Nodo 2: `100.115.210.113`, cita-service, doctor-horario, PostgreSQL/Patroni, HAProxy, RabbitMQ, Redis Sentinel.
+- Nodo 3: `100.99.158.111`, pago-service, notificacion-service, PostgreSQL/Patroni, HAProxy, RabbitMQ, Redis Sentinel.
 
-## Cómo ejecutar
+## Base de datos HA
 
-Para iniciar todo el sistema:
+PostgreSQL se administra con Patroni y etcd. Cada maquina levanta un nodo Postgres y un HAProxy local:
+
+- Escritura desde contenedores: `jdbc:postgresql://haproxy:5432/mediqueueadmin`
+- Escritura desde la maquina host: `localhost:5000`
+- Lectura desde la maquina host: `localhost:5001`
+- Estado HAProxy: `http://localhost:7000`
+- Estado Patroni del nodo: `http://localhost:8008/cluster`
+
+El primer lider de Patroni crea automaticamente:
+
+- Base: `mediqueueadmin`
+- Usuario: `mediqueue`
+- Password: `mediqueue123`
+- Extension: `pgcrypto`
+
+Si los volumenes ya existian antes de este cambio, esa inicializacion no se vuelve a ejecutar. En ese caso cree la base y el usuario manualmente o reinicialice el cluster de forma controlada.
+
+## Ejecucion
+
+Ejecute en cada maquina el compose correspondiente:
 
 ```bash
-docker-compose up -d --build
+docker compose -f docker-compose-node1.yml up -d --build
+docker compose -f docker-compose-node2.yml up -d --build
+docker compose -f docker-compose-node3.yml up -d --build
 ```
 
-## Verificando el Estado del Cluster
+## Estado de la base de datos
 
-Puedes ver el estado del cluster accediendo a las estadísticas de HAProxy en `http://localhost:7000`.
-
-O mediante la API de Patroni en cualquier nodo:
+Ver lider y replicas:
 
 ```bash
 curl http://localhost:8008/cluster
 ```
 
-## Estrategia de Backups Incrementales
+Ver salud de HAProxy:
 
-Los backups se gestionan con **pgBackRest**. Los archivos de backup se guardan en el volumen `backrest_repo`.
-
-### Configuración Inicial
-
-La primera vez que corras el sistema, debes inicializar el "stanza" de pgBackRest en el nodo líder:
-
-1. Identifica al líder (ej. `postgres1`).
-2. Ejecuta:
-   ```bash
-   docker-compose exec postgres1 bash /home/postgres/backup.sh
-   ```
-
-### Ejecutar Backup Incremental
-
-Para realizar un backup incremental manualmente:
 ```bash
-docker-compose exec postgres1 pgbackrest --stanza=mediqueue --type=incr backup
+curl http://localhost:7000
 ```
 
-### Recuperación de Datos
+Probar conexion por HAProxy:
 
-Si la base de datos se corrompe o se borra, puedes restaurar usando:
 ```bash
-docker-compose exec postgres1 pgbackrest --stanza=mediqueue restore
+docker compose -f docker-compose-node1.yml exec postgres1 psql -U postgres -d mediqueueadmin -c "select current_database(), current_user, now();"
 ```
 
-## 🌐 Despliegue Distribuido con Docker Swarm
+Listar tablas principales:
 
-Para la prueba con múltiples máquinas, utilizaremos **Docker Swarm**. Esto permite que las computadoras de tus compañeros se unan en un solo "cluster".
+```bash
+docker compose -f docker-compose-node1.yml exec postgres1 psql -U postgres -d mediqueueadmin -c "\dt"
+```
 
-### Pasos para activar el Cluster:
+## pgAdmin
 
-1.  **En tu máquina (Manager):**
-    ```bash
-    docker swarm init --advertise-addr <TU_IP_LOCAL>
-    ```
-    *Copia el comando `docker swarm join --token ...` que aparecerá.*
+Este despliegue no levanta pgAdmin por defecto. Puede abrirlo como contenedor auxiliar en cualquier maquina:
 
-2.  **En las máquinas de tus compañeros (Workers):**
-    Pega el comando copiado en el paso anterior.
+```bash
+docker run -d --name mediqueue-pgadmin -p 5050:80 \
+  -e PGADMIN_DEFAULT_EMAIL=admin@mediqueue.local \
+  -e PGADMIN_DEFAULT_PASSWORD=admin123 \
+  dpage/pgadmin4
+```
 
-3.  **Desplegar todo el sistema:**
-    ```bash
-    docker stack deploy -c docker-compose.yml mediqueue
-    ```
+En pgAdmin agregue un servidor:
 
-4.  **Verificar el estado:**
-    ```bash
-    docker service ls
-    ```
+- Name: `Mediqueue HA`
+- Host name/address: IP de cualquier maquina con HAProxy, por ejemplo `100.76.170.62`
+- Port: `5000`
+- Maintenance database: `mediqueueadmin`
+- Username: `mediqueue`
+- Password: `mediqueue123`
 
----
+Para ver registros: `Servers > Mediqueue HA > Databases > mediqueueadmin > Schemas > public > Tables`, clic derecho sobre una tabla y `View/Edit Data`.
 
-## ⚖️ Docker Swarm vs Kubernetes (K8s)
+## Resiliencia sin orquestador
 
-Durante la presentación, podrían preguntarte por qué elegiste Swarm. Aquí tienes la respuesta técnica:
+Docker Compose no reubica automaticamente contenedores entre maquinas cuando una computadora se apaga. La disponibilidad ante caida de una maquina se consigue con estos puntos:
 
-| Característica | Docker Swarm | Kubernetes (K8s) |
-| :--- | :--- | :--- |
-| **Instalación** | Muy simple (Ya viene en Docker). | Compleja (Requiere muchas herramientas extra). |
-| **Curva de Aprendizaje** | Baja. Usa el mismo `docker-compose.yml`. | Alta. Requiere aprender YAMLs de K8s. |
-| **Recursos** | Muy ligero. Ideal para vuestra prueba. | Pesado. Consume mucha RAM/CPU. |
-| **Escalabilidad** | Rápida y sencilla para clusters pequeños. | Masiva. Diseñado para miles de nodos. |
+- La base de datos sigue disponible si queda quorum de etcd/Patroni y al menos un nodo Postgres sano.
+- Los microservicios que solo existian en la maquina apagada deben levantarse en otra maquina con su compose alterno o manualmente.
+- El gateway debe apuntar a la IP donde se levanto el servicio recuperado.
+- RabbitMQ debe conservar el cluster y las colas durables para no perder eventos publicados.
 
-**Respuesta para los evaluadores:**
-> "Elegimos **Docker Swarm** porque ofrece la orquestación necesaria para garantizar la **Alta Disponibilidad** y **Escalabilidad Horizontal** de nuestros microservicios con una sobrecarga mínima de recursos. Mientras que Kubernetes es el estándar de la industria para despliegues masivos, Swarm nos permite cumplir con los mismos objetivos de redundancia y recuperación ante fallos de manera eficiente para esta arquitectura de microservicios."
-
----
-
-## 🛡️ Prueba de Resiliencia (Puntos Extra)
-Si apagas una máquina del cluster, verás cómo Swarm:
-1. Detecta la caída.
-2. Identifica qué servicios corrían allí.
-3. Los **vuelve a levantar automáticamente** en las máquinas que siguen encendidas.
-
----
-**Nota:** El sistema está configurado para que si una máquina se apaga, Patroni detecte la caída y elija un nuevo líder automáticamente en menos de 30 segundos. HAProxy actualizará su ruta al nuevo líder sin intervención manual.
+Para cumplir la prueba de apagar una computadora sin orquestador externo, deben preparar perfiles o comandos de recuperacion manual para levantar los servicios criticos de esa maquina en otra antes de la demo.
