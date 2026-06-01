@@ -33,7 +33,6 @@ services:
       - PATRONI_NAME=postgres3
     volumes:
       - ./infrastructure/ha-postgres/patroni/patroni.yml.template:/home/postgres/patroni.yml.template:ro
-      - ./infrastructure/ha-postgres/patroni/entrypoint.sh:/home/postgres/entrypoint.sh:ro
       - postgres3_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
