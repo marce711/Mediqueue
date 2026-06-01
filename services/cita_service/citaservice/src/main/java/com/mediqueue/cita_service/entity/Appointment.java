@@ -30,7 +30,9 @@ import java.util.UUID;
 @Table(
         name = "appointments",
         uniqueConstraints = {
-                @UniqueConstraint(name = "ux_appointments_idempotency_key_jpa", columnNames = "idempotency_key")
+                @UniqueConstraint(name = "ux_appointments_idempotency_key_jpa", columnNames = "idempotency_key"),
+                @UniqueConstraint(name = "ux_appointments_doctor_datetime_jpa", columnNames = {"doctor_id", "appointment_date"}),
+                @UniqueConstraint(name = "ux_appointments_patient_datetime_jpa", columnNames = {"patient_id", "appointment_date"})
         }
 )
 public class Appointment {

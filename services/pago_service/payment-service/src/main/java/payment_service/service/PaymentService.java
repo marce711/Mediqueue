@@ -3,6 +3,7 @@ package payment_service.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
@@ -61,7 +62,12 @@ public class PaymentService {
 
         payment.setStatus("SUCCESS");
 
-        Payment savedPayment = paymentRepository.save(payment);
+        Payment savedPayment;
+        try {
+            savedPayment = paymentRepository.save(payment);
+        } catch (DataIntegrityViolationException exception) {
+            throw new RuntimeException("Esta cita ya fue pagada");
+        }
         logger.info("Pago procesado. paymentId={}, appointmentId={}, status={}",
                 savedPayment.getId(), savedPayment.getAppointmentId(), savedPayment.getStatus());
 

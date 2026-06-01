@@ -94,7 +94,7 @@ public class AppointmentService {
             eventPublisher.publishCreated(savedAppointment);
             return toResponse(savedAppointment);
         } catch (DataIntegrityViolationException exception) {
-            throw new AppointmentConflictException("Doctor already has an appointment at the requested time");
+            throw new AppointmentConflictException("Appointment slot is already reserved");
         }
     }
 

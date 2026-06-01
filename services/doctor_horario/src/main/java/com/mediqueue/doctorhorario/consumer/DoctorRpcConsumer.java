@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class DoctorRpcConsumer {
 
@@ -22,11 +24,11 @@ public class DoctorRpcConsumer {
     public DoctorValidationResponse handleDoctorValidation(DoctorValidationRequest request) {
         logger.info("Recibida peticion RPC de validacion de horario de doctor. doctorId={}", request.doctorId());
         try {
-            Long doctorId = Long.parseLong(request.doctorId().trim());
+            UUID doctorId = UUID.fromString(request.doctorId().trim());
             boolean hasAvailableSchedule = !repository.findByDoctorIdAndDisponibleTrue(doctorId).isEmpty();
             logger.info("Resultado de validacion para doctorId={}: {}", doctorId, hasAvailableSchedule);
             return new DoctorValidationResponse(hasAvailableSchedule);
-        } catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
             logger.error("Formato de doctorId invalido: {}", request.doctorId());
             return new DoctorValidationResponse(false);
         }

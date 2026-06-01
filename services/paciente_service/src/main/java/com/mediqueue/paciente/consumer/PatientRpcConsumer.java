@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class PatientRpcConsumer {
 
@@ -22,11 +24,11 @@ public class PatientRpcConsumer {
     public PatientValidationResponse handlePatientValidation(PatientValidationRequest request) {
         logger.info("Recibida peticion RPC de validacion de paciente. patientId={}", request.patientId());
         try {
-            Long id = Long.parseLong(request.patientId().trim());
+            UUID id = UUID.fromString(request.patientId().trim());
             boolean exists = repository.existsById(id);
             logger.info("Resultado de validacion para patientId={}: {}", id, exists);
             return new PatientValidationResponse(exists);
-        } catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
             logger.error("Formato de patientId invalido: {}", request.patientId());
             return new PatientValidationResponse(false);
         }

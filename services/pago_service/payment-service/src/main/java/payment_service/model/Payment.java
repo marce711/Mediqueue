@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "payments",
         uniqueConstraints = {
-                @UniqueConstraint(name = "ux_payments_idempotency_key_jpa", columnNames = "idempotency_key")
+                @UniqueConstraint(name = "ux_payments_idempotency_key_jpa", columnNames = "idempotency_key"),
+                @UniqueConstraint(name = "ux_payments_appointment_id_jpa", columnNames = "appointment_id")
         }
 )
 public class Payment {
