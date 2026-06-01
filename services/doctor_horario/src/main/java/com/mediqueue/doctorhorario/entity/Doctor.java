@@ -6,32 +6,37 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(
-        name = "doctors",
+        name = "doctores",
         indexes = {
                 @Index(name = "idx_doctors_correo", columnList = "correo", unique = true),
-                @Index(name = "idx_doctors_activo", columnList = "activo")
+                @Index(name = "idx_doctors_activo", columnList = "estado")
         }
 )
 public class Doctor {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id_doctor")
+    private UUID id;
 
     @Column(nullable = false, length = 120)
     private String nombre;
 
-    @Column(nullable = false, length = 120)
-    private String especialidad;
+    @ManyToOne
+    @JoinColumn(name = "especialidad_id", nullable = false)
+    private Specialty specialty;
 
     @Column(length = 30)
     private String telefono;
@@ -39,13 +44,13 @@ public class Doctor {
     @Column(length = 120, unique = true)
     private String correo;
 
-    @Column(nullable = false)
-    private boolean activo = true;
+    @Column(name = "estado", nullable = false)
+    private String estado = "ACTIVO";
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "creado_en", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "actualizado_en", nullable = false)
     private LocalDateTime updatedAt;
 
     @Version
@@ -67,8 +72,12 @@ public class Doctor {
         updatedAt = LocalDateTime.now();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public String getNombre() {
@@ -79,12 +88,12 @@ public class Doctor {
         this.nombre = nombre;
     }
 
-    public String getEspecialidad() {
-        return especialidad;
+    public Specialty getSpecialty() {
+        return specialty;
     }
 
-    public void setEspecialidad(String especialidad) {
-        this.especialidad = especialidad;
+    public void setSpecialty(Specialty specialty) {
+        this.specialty = specialty;
     }
 
     public String getTelefono() {
@@ -103,11 +112,19 @@ public class Doctor {
         this.correo = correo;
     }
 
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
     public boolean isActivo() {
-        return activo;
+        return "ACTIVO".equals(estado);
     }
 
     public void setActivo(boolean activo) {
-        this.activo = activo;
+        this.estado = activo ? "ACTIVO" : "INACTIVO";
     }
 }

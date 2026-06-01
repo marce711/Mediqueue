@@ -13,10 +13,11 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.UUID;
 
 @Entity
 @Table(
-        name = "doctor_horarios",
+        name = "horarios",
         indexes = {
                 @Index(name = "idx_doctor_horario_doctor_id", columnList = "doctor_id"),
                 @Index(name = "idx_doctor_horario_disponible", columnList = "disponible")
@@ -25,17 +26,17 @@ import java.time.LocalTime;
 public class DoctorHorario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id_horario")
+    private UUID id;
 
     @NotNull
     @Column(name = "doctor_id", nullable = false)
-    private Long doctorId;
+    private UUID doctorId;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
     @Column(name = "dia_semana", nullable = false, length = 20)
-    private DayOfWeek diaSemana;
+    private String diaSemana;
 
     @NotNull
     @Column(name = "hora_inicio", nullable = false)
@@ -48,23 +49,27 @@ public class DoctorHorario {
     @Column(nullable = false)
     private boolean disponible = true;
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public Long getDoctorId() {
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getDoctorId() {
         return doctorId;
     }
 
-    public void setDoctorId(Long doctorId) {
+    public void setDoctorId(UUID doctorId) {
         this.doctorId = doctorId;
     }
 
-    public DayOfWeek getDiaSemana() {
+    public String getDiaSemana() {
         return diaSemana;
     }
 
-    public void setDiaSemana(DayOfWeek diaSemana) {
+    public void setDiaSemana(String diaSemana) {
         this.diaSemana = diaSemana;
     }
 

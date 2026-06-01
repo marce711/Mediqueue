@@ -25,6 +25,14 @@ CREATE TABLE especialidades (
     creado_en TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- Insertar Especialidades Iniciales
+INSERT INTO especialidades (nombre, descripcion) VALUES 
+('Medicina General', 'Atención médica primaria y preventiva'),
+('Pediatría', 'Cuidado médico de bebés, niños y adolescentes'),
+('Ginecología', 'Salud del sistema reproductor femenino'),
+('Cardiología', 'Tratamiento de trastornos del corazón'),
+('Dermatología', 'Cuidado de la piel, cabello y uñas');
+
 -- 4. Tabla: DOCTORES
 CREATE TABLE doctores (
     id_doctor UUID PRIMARY KEY DEFAULT gen_random_uuid(),

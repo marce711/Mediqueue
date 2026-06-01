@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class DoctorService {
@@ -45,7 +46,7 @@ public class DoctorService {
         doctor.setSpecialty(specialty);
         doctor.setTelefono(blankToNull(request.telefono()));
         doctor.setCorreo(correo.isBlank() ? null : correo);
-        doctor.setActivo(request.activo() == null || request.activo());
+        doctor.setEstado(request.activo() == null || request.activo() ? "ACTIVO" : "INACTIVO");
 
         Doctor savedDoctor = doctorRepository.save(doctor);
         List<DoctorHorario> horarios = request.horarios().stream()
@@ -58,7 +59,7 @@ public class DoctorService {
 
     @Transactional(readOnly = true)
     public List<DoctorResponse> listar() {
-        return doctorRepository.findByActivoTrueOrderByNombreAsc().stream()
+        return doctorRepository.findByEstado("ACTIVO").stream()
                 .map(doctor -> toResponse(
                         doctor,
                         horarioRepository.findByDoctorIdOrderByDiaSemanaAscHoraInicioAsc(doctor.getId())
@@ -71,7 +72,7 @@ public class DoctorService {
         return specialtyRepository.findAll();
     }
 
-    private DoctorHorario buildHorario(Long doctorId, DoctorScheduleRequest schedule) {
+    private DoctorHorario buildHorario(UUID doctorId, DoctorScheduleRequest schedule) {
         validarRangoHorario(schedule.horaInicio(), schedule.horaFin());
         DoctorHorario horario = new DoctorHorario();
         horario.setDoctorId(doctorId);

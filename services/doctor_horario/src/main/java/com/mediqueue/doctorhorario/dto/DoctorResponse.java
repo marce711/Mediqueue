@@ -1,11 +1,12 @@
 package com.mediqueue.doctorhorario.dto;
 
 import java.util.List;
+import java.util.UUID;
 
 public record DoctorResponse(
-        Long id,
+        UUID id,
         String nombre,
-        Integer specialtyId,
+        UUID specialtyId,
         String specialtyName,
         String telefono,
         String correo,

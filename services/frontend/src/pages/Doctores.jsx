@@ -84,7 +84,7 @@ export default function Doctores() {
       setMessage(null);
       await doctorService.crear({
         ...form,
-        specialtyId: parseInt(form.specialtyId),
+        specialtyId: form.specialtyId,
         telefono: form.telefono || null,
         correo: form.correo || null,
         activo: true,

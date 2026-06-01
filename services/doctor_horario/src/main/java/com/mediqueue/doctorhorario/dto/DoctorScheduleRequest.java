@@ -1,13 +1,12 @@
 package com.mediqueue.doctorhorario.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
-import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 public record DoctorScheduleRequest(
-        @NotNull(message = "diaSemana es obligatorio")
-        DayOfWeek diaSemana,
+        @NotBlank(message = "diaSemana es obligatorio")
+        String diaSemana,
 
         @NotNull(message = "horaInicio es obligatoria")
         LocalTime horaInicio,

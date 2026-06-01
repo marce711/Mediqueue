@@ -1,12 +1,12 @@
 package com.mediqueue.doctorhorario.dto;
 
-import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.UUID;
 
 public record DoctorHorarioResponse(
-        Long id,
-        Long doctorId,
-        DayOfWeek diaSemana,
+        UUID id,
+        UUID doctorId,
+        String diaSemana,
         LocalTime horaInicio,
         LocalTime horaFin,
         boolean disponible
