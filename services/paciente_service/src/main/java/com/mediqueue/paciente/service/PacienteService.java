@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PacienteService {
@@ -35,7 +36,7 @@ public class PacienteService {
         }
     }
 
-    public PacienteResponse obtenerPorId(Long id) {
+    public PacienteResponse obtenerPorId(UUID id) {
         logger.debug("Consultando paciente por id. pacienteId={}", id);
         Paciente paciente = repository.findById(id)
                 .orElseThrow(() -> new PacienteNotFoundException("Paciente no encontrado con id: " + id));
@@ -69,6 +70,7 @@ public class PacienteService {
             paciente.setCorreo(correo);
             paciente.setNombre(nombre);
             paciente.setTelefono(telefono);
+            paciente.setEstado("ACTIVO");
 
             Paciente pacienteGuardado = repository.save(paciente);
             logger.info("Paciente persistido correctamente. pacienteId={}", pacienteGuardado.getId());
