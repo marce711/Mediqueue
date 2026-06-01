@@ -22,7 +22,7 @@ spring:
             - id: paciente-service
               uri: ${PACIENTE_SERVICE_URL:http://100.76.170.62:8083}
               predicates:
-                - Path=/api/pacientes/**
+                - Path=/api/pacientes,/api/pacientes/**
               filters:
                 - name: CircuitBreaker
                   args:
@@ -32,7 +32,7 @@ spring:
             - id: cita-service
               uri: ${CITA_SERVICE_URL:http://100.115.210.113:8081}
               predicates:
-                - Path=/api/v1/appointments/**
+                - Path=/api/v1/appointments,/api/v1/appointments/**
               filters:
                 - name: CircuitBreaker
                   args:
@@ -42,7 +42,7 @@ spring:
             - id: doctor-horario
               uri: ${DOCTOR_SERVICE_URL:http://100.115.210.113:8082}
               predicates:
-                - Path=/api/horarios/**
+                - Path=/api/horarios,/api/horarios/**
               filters:
                 - name: CircuitBreaker
                   args:
@@ -52,7 +52,7 @@ spring:
             - id: pago-service
               uri: ${PAGO_SERVICE_URL:http://100.99.158.111:8084}
               predicates:
-                - Path=/api/payments/**
+                - Path=/api/payments,/api/payments/**
               filters:
                 - name: CircuitBreaker
                   args:
@@ -62,7 +62,7 @@ spring:
             - id: notificacion-service
               uri: ${NOTIFICACION_SERVICE_URL:http://100.99.158.111:8085}
               predicates:
-                - Path=/api/notificaciones/**
+                - Path=/api/notificaciones,/api/notificaciones/**
               filters:
                 - name: CircuitBreaker
                   args:
