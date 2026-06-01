@@ -92,7 +92,7 @@ services:
     build: ./services/cita_service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.111:5672
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
       - SPRING_DATA_REDIS_SENTINEL_MASTER=mymaster
       - SPRING_DATA_REDIS_SENTINEL_NODES=100.76.170.62:26379,100.115.210.113:26379,100.99.158.111:26379
       - PATIENT_SERVICE_URL=http://100.76.170.62:8083
@@ -109,7 +109,7 @@ services:
     build: ./services/doctor_horario
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.111:5672
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
     ports:
       - "8082:8082"
     depends_on:

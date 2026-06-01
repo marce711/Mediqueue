@@ -1,9 +1,12 @@
--- 1. Configuración Inicial
--- CREATE DATABASE mediqueueadmin;
+-- Inicializacion idempotente de la base Mediqueue.
+-- Este archivo puede ejecutarse mas de una vez sin fallar por objetos existentes.
+
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. Tabla: PACIENTES
-CREATE TABLE pacientes (
+GRANT ALL ON SCHEMA public TO mediqueue;
+ALTER SCHEMA public OWNER TO mediqueue;
+
+CREATE TABLE IF NOT EXISTS pacientes (
     id_paciente UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     dpi VARCHAR(30) NOT NULL UNIQUE,
     correo VARCHAR(120) NOT NULL UNIQUE,
@@ -16,8 +19,7 @@ CREATE TABLE pacientes (
     CONSTRAINT chk_paciente_estado CHECK (estado IN ('ACTIVO', 'INACTIVO'))
 );
 
--- 3. Tabla: ESPECIALIDADES
-CREATE TABLE especialidades (
+CREATE TABLE IF NOT EXISTS especialidades (
     id_especialidad UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nombre VARCHAR(100) NOT NULL UNIQUE,
     descripcion VARCHAR(255),
@@ -25,16 +27,15 @@ CREATE TABLE especialidades (
     creado_en TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Insertar Especialidades Iniciales
-INSERT INTO especialidades (nombre, descripcion) VALUES 
+INSERT INTO especialidades (nombre, descripcion) VALUES
 ('Medicina General', 'Atención médica primaria y preventiva'),
 ('Pediatría', 'Cuidado médico de bebés, niños y adolescentes'),
 ('Ginecología', 'Salud del sistema reproductor femenino'),
 ('Cardiología', 'Tratamiento de trastornos del corazón'),
-('Dermatología', 'Cuidado de la piel, cabello y uñas');
+('Dermatología', 'Cuidado de la piel, cabello y uñas')
+ON CONFLICT (nombre) DO NOTHING;
 
--- 4. Tabla: DOCTORES
-CREATE TABLE doctores (
+CREATE TABLE IF NOT EXISTS doctores (
     id_doctor UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     especialidad_id UUID NOT NULL,
     nombre VARCHAR(120) NOT NULL,
@@ -48,8 +49,7 @@ CREATE TABLE doctores (
     CONSTRAINT chk_doctor_estado CHECK (estado IN ('ACTIVO', 'INACTIVO'))
 );
 
--- 5. Tabla: HORARIOS
-CREATE TABLE horarios (
+CREATE TABLE IF NOT EXISTS horarios (
     id_horario UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     doctor_id UUID NOT NULL,
     dia_semana VARCHAR(20) NOT NULL,
@@ -60,8 +60,7 @@ CREATE TABLE horarios (
     CONSTRAINT fk_horario_doctor FOREIGN KEY (doctor_id) REFERENCES doctores(id_doctor) ON DELETE CASCADE
 );
 
--- 6. Tabla: CITAS (Agregada según recomendación)
-CREATE TABLE citas (
+CREATE TABLE IF NOT EXISTS citas (
     id_cita UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     paciente_id UUID NOT NULL,
     doctor_id UUID NOT NULL,
@@ -79,8 +78,7 @@ CREATE TABLE citas (
     CONSTRAINT chk_cita_estado CHECK (estado_cita IN ('CONFIRMADA', 'CANCELADA', 'PENDIENTE', 'FINALIZADA'))
 );
 
--- 7. Tabla: PAGOS (Relación 1:1 y llaves foráneas corregidas)
-CREATE TABLE pagos (
+CREATE TABLE IF NOT EXISTS pagos (
     id_pago UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cita_id UUID NOT NULL UNIQUE,
     paciente_id UUID NOT NULL,
@@ -97,10 +95,9 @@ CREATE TABLE pagos (
     CONSTRAINT chk_pago_estado CHECK (estado IN ('PENDIENTE', 'PAGADO', 'FALLIDO', 'CANCELADO'))
 );
 
--- 8. Tabla: LLAVES_IDEMPOTENCIA (Unificada)
-CREATE TABLE llaves_idempotencia (
+CREATE TABLE IF NOT EXISTS llaves_idempotencia (
     client_id UUID PRIMARY KEY,
-    servicio_origen VARCHAR(50) NOT NULL, 
+    servicio_origen VARCHAR(50) NOT NULL,
     request_hash VARCHAR(255),
     idempotency_key VARCHAR(120) UNIQUE NOT NULL,
     cuerpo_respuesta TEXT,
@@ -108,11 +105,10 @@ CREATE TABLE llaves_idempotencia (
     expira_en TIMESTAMP
 );
 
--- 9. Tabla: EVENTOS_SALIENTES (Outbox - Eliminada duplicidad)
-CREATE TABLE eventos_salientes (
+CREATE TABLE IF NOT EXISTS eventos_salientes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     aggregate_id UUID NOT NULL,
-    aggregate_type VARCHAR(80) NOT NULL, 
+    aggregate_type VARCHAR(80) NOT NULL,
     event_type VARCHAR(120) NOT NULL,
     exchange_name VARCHAR(160) NOT NULL,
     routing_key VARCHAR(160) NOT NULL,
@@ -124,24 +120,92 @@ CREATE TABLE eventos_salientes (
     CONSTRAINT chk_outbox_status CHECK (status IN ('PENDIENTE', 'PROCESADO'))
 );
 
--- 10. Índices de Unicidad
-CREATE UNIQUE INDEX ux_doctor_horario_activo 
-ON citas (doctor_id, horario_id) 
+-- Tablas usadas por los servicios JPA actuales de citas y pagos.
+CREATE TABLE IF NOT EXISTS appointments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id VARCHAR(80) NOT NULL,
+    doctor_id VARCHAR(80) NOT NULL,
+    appointment_date TIMESTAMP NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    idempotency_key VARCHAR(120),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    version BIGINT
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+    id BIGSERIAL PRIMARY KEY,
+    appointment_id VARCHAR(80) NOT NULL,
+    patient_id VARCHAR(80) NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
+    status VARCHAR(30) NOT NULL,
+    idempotency_key VARCHAR(120),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    version BIGINT
+);
+
+CREATE TABLE IF NOT EXISTS outbox_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate_id VARCHAR(120) NOT NULL,
+    aggregate_type VARCHAR(80) NOT NULL,
+    event_type VARCHAR(120) NOT NULL,
+    exchange_name VARCHAR(160) NOT NULL,
+    routing_key VARCHAR(160) NOT NULL,
+    payload TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    attempts INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMP NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_doctor_horario_activo
+ON citas (doctor_id, horario_id)
 WHERE estado_cita = 'CONFIRMADA';
 
-CREATE UNIQUE INDEX ux_paciente_horario_activo 
-ON citas (paciente_id, horario_id) 
+CREATE UNIQUE INDEX IF NOT EXISTS ux_paciente_horario_activo
+ON citas (paciente_id, horario_id)
 WHERE estado_cita = 'CONFIRMADA';
 
-ALTER SCHEMA public OWNER TO mediqueue;
-ALTER TABLE pacientes OWNER TO mediqueue;
-ALTER TABLE especialidades OWNER TO mediqueue;
-ALTER TABLE doctores OWNER TO mediqueue;
-ALTER TABLE horarios OWNER TO mediqueue;
-ALTER TABLE citas OWNER TO mediqueue;
-ALTER TABLE pagos OWNER TO mediqueue;
-ALTER TABLE llaves_idempotencia OWNER TO mediqueue;
-ALTER TABLE eventos_salientes OWNER TO mediqueue;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_appointments_idempotency_key_jpa
+ON appointments (idempotency_key)
+WHERE idempotency_key IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_appointments_doctor_datetime_jpa
+ON appointments (doctor_id, appointment_date);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_appointments_patient_datetime_jpa
+ON appointments (patient_id, appointment_date);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_payments_idempotency_key_jpa
+ON payments (idempotency_key)
+WHERE idempotency_key IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_payments_appointment_id_jpa
+ON payments (appointment_id);
+
+DO
+$$
+DECLARE
+    object_name text;
+BEGIN
+    FOR object_name IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('ALTER TABLE public.%I OWNER TO mediqueue', object_name);
+    END LOOP;
+
+    FOR object_name IN
+        SELECT sequencename
+        FROM pg_sequences
+        WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('ALTER SEQUENCE public.%I OWNER TO mediqueue', object_name);
+    END LOOP;
+END
+$$;
 
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mediqueue;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mediqueue;
