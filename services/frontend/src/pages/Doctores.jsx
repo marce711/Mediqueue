@@ -16,11 +16,12 @@ const emptySchedule = { diaSemana: 'MONDAY', horaInicio: '08:00', horaFin: '12:0
 
 export default function Doctores() {
   const [doctores, setDoctores] = useState([]);
+  const [especialidades, setEspecialidades] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [form, setForm] = useState({
     nombre: '',
-    especialidad: '',
+    specialtyId: '',
     telefono: '',
     correo: '',
     horarios: [emptySchedule],
@@ -28,6 +29,7 @@ export default function Doctores() {
 
   useEffect(() => {
     fetchDoctores();
+    fetchEspecialidades();
   }, []);
 
   const fetchDoctores = async () => {
@@ -39,6 +41,18 @@ export default function Doctores() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEspecialidades = async () => {
+    try {
+      const res = await doctorService.listarEspecialidades();
+      setEspecialidades(res.data);
+      if (res.data.length > 0 && !form.specialtyId) {
+        setForm(prev => ({ ...prev, specialtyId: res.data[0].id }));
+      }
+    } catch (err) {
+      console.error('Error fetching specialties:', err);
     }
   };
 
@@ -70,12 +84,13 @@ export default function Doctores() {
       setMessage(null);
       await doctorService.crear({
         ...form,
+        specialtyId: parseInt(form.specialtyId),
         telefono: form.telefono || null,
         correo: form.correo || null,
         activo: true,
       });
       setMessage({ type: 'success', text: 'Doctor y horarios registrados correctamente.' });
-      setForm({ nombre: '', especialidad: '', telefono: '', correo: '', horarios: [{ ...emptySchedule }] });
+      setForm({ nombre: '', specialtyId: especialidades[0]?.id || '', telefono: '', correo: '', horarios: [{ ...emptySchedule }] });
       fetchDoctores();
     } catch (err) {
       const validationErrors = err.response?.data?.validationErrors;
@@ -115,12 +130,16 @@ export default function Doctores() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700">Especialidad</label>
-              <input
+              <select
                 required
                 className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:outline-none focus:ring-2 focus:ring-[#2f6f62]/20"
-                value={form.especialidad}
-                onChange={e => setForm({ ...form, especialidad: e.target.value })}
-              />
+                value={form.specialtyId}
+                onChange={e => setForm({ ...form, specialtyId: e.target.value })}
+              >
+                {especialidades.map(esp => (
+                  <option key={esp.id} value={esp.id}>{esp.name}</option>
+                ))}
+              </select>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -189,7 +208,7 @@ export default function Doctores() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || especialidades.length === 0}
               className="w-full rounded-md bg-[#12312b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1b493f] disabled:opacity-50"
             >
               {loading ? 'Guardando...' : 'Registrar doctor'}
@@ -213,7 +232,7 @@ export default function Doctores() {
                 <div className="flex flex-col justify-between gap-3 sm:flex-row">
                   <div>
                     <p className="text-lg font-bold text-slate-950">{doctor.nombre}</p>
-                    <p className="text-sm text-[#2f6f62]">{doctor.especialidad}</p>
+                    <p className="text-sm text-[#2f6f62]">{doctor.specialtyName}</p>
                   </div>
                   <p className="font-mono text-xs text-slate-400">ID {doctor.id}</p>
                 </div>

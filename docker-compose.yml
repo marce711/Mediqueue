@@ -22,7 +22,9 @@ services:
       - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - mediqueue-net
+      mediqueue-net:
+        aliases:
+          - haproxy
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U mediqueue -d mediqueueadmin"]
       interval: 10s
@@ -69,7 +71,7 @@ services:
   paciente-service:
     build: ./services/paciente_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://haproxy:5432/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_RABBITMQ_ADDRESSES: rabbitmq:5672
@@ -88,7 +90,7 @@ services:
   doctor-horario:
     build: ./services/doctor_horario
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://haproxy:5432/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_RABBITMQ_ADDRESSES: rabbitmq:5672
@@ -107,7 +109,7 @@ services:
   cita-service:
     build: ./services/cita_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://haproxy:5432/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_DATA_REDIS_SENTINEL_MASTER: mymaster
@@ -132,7 +134,7 @@ services:
   pago-service:
     build: ./services/pago_service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mediqueueadmin
+      SPRING_DATASOURCE_URL: jdbc:postgresql://haproxy:5432/mediqueueadmin
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_RABBITMQ_ADDRESSES: rabbitmq:5672

@@ -5,7 +5,8 @@ import java.util.List;
 public record DoctorResponse(
         Long id,
         String nombre,
-        String especialidad,
+        Integer specialtyId,
+        String specialtyName,
         String telefono,
         String correo,
         boolean activo,

@@ -7,8 +7,10 @@ import com.mediqueue.doctorhorario.dto.DoctorScheduleRequest;
 import com.mediqueue.doctorhorario.entity.Doctor;
 import com.mediqueue.doctorhorario.entity.DoctorHorario;
 import com.mediqueue.doctorhorario.exception.InvalidHorarioException;
+import com.mediqueue.doctorhorario.entity.Specialty;
 import com.mediqueue.doctorhorario.repository.DoctorHorarioRepository;
 import com.mediqueue.doctorhorario.repository.DoctorRepository;
+import com.mediqueue.doctorhorario.repository.SpecialtyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +22,12 @@ public class DoctorService {
 
     private final DoctorRepository doctorRepository;
     private final DoctorHorarioRepository horarioRepository;
+    private final SpecialtyRepository specialtyRepository;
 
-    public DoctorService(DoctorRepository doctorRepository, DoctorHorarioRepository horarioRepository) {
+    public DoctorService(DoctorRepository doctorRepository, DoctorHorarioRepository horarioRepository, SpecialtyRepository specialtyRepository) {
         this.doctorRepository = doctorRepository;
         this.horarioRepository = horarioRepository;
+        this.specialtyRepository = specialtyRepository;
     }
 
     @Transactional
@@ -33,9 +37,12 @@ public class DoctorService {
             throw new InvalidHorarioException("Ya existe un doctor registrado con ese correo");
         }
 
+        Specialty specialty = specialtyRepository.findById(request.specialtyId())
+                .orElseThrow(() -> new InvalidHorarioException("Especialidad no encontrada con ID: " + request.specialtyId()));
+
         Doctor doctor = new Doctor();
         doctor.setNombre(normalize(request.nombre()));
-        doctor.setEspecialidad(normalize(request.especialidad()));
+        doctor.setSpecialty(specialty);
         doctor.setTelefono(blankToNull(request.telefono()));
         doctor.setCorreo(correo.isBlank() ? null : correo);
         doctor.setActivo(request.activo() == null || request.activo());
@@ -59,6 +66,11 @@ public class DoctorService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<Specialty> listarEspecialidades() {
+        return specialtyRepository.findAll();
+    }
+
     private DoctorHorario buildHorario(Long doctorId, DoctorScheduleRequest schedule) {
         validarRangoHorario(schedule.horaInicio(), schedule.horaFin());
         DoctorHorario horario = new DoctorHorario();
@@ -80,7 +92,8 @@ public class DoctorService {
         return new DoctorResponse(
                 doctor.getId(),
                 doctor.getNombre(),
-                doctor.getEspecialidad(),
+                doctor.getSpecialty().getId(),
+                doctor.getSpecialty().getName(),
                 doctor.getTelefono(),
                 doctor.getCorreo(),
                 doctor.isActivo(),
