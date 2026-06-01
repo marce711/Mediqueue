@@ -24,5 +24,6 @@ USER postgres
 
 WORKDIR /home/postgres
 
+ENTRYPOINT ["/home/postgres/entrypoint.sh"]
 # Default configuration will be overwritten by environment variables or volume mounts
-CMD ["patroni", "/home/postgres/patroni.yml"]
+CMD ["/home/postgres/patroni.yml"]
