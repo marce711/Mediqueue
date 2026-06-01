@@ -10,6 +10,7 @@ etcd:
   hosts: "${PATRONI_ETCD_HOSTS}"
 
 bootstrap:
+  post_init: /home/postgres/init-db.sh
   dcs:
     ttl: 30
     loop_wait: 10
@@ -23,16 +24,16 @@ bootstrap:
         max_replication_slots: 10
         hot_standby: "on"
         archive_mode: "on"
-        archive_command: "pgbackrest --stanza=mediqueue archive-push %p"
+        archive_command: "test ! -f /etc/pgbackrest/pgbackrest.conf || pgbackrest --stanza=mediqueue archive-push %p"
         synchronous_commit: "on"
         synchronous_standby_names: "*" # Asegura que al menos una réplica confirme la escritura
 
-
-  init:
-    data_dir: "/var/lib/postgresql/data"
-    pg_hba:
-      - host replication replicator 0.0.0.0/0 trust
-      - host all all 0.0.0.0/0 md5
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  pg_hba:
+    - host replication replicator 0.0.0.0/0 trust
+    - host all all 0.0.0.0/0 md5
 
 postgresql:
   listen: 0.0.0.0:5432

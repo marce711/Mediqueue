@@ -26,6 +26,7 @@ services:
       - NODE_NAME=postgres1
       - NODE_IP=100.76.170.62
       - POSTGRES_PASSWORD=mediqueue123
+      - POSTGRES_APP_PASSWORD=mediqueue123
       - REPLICATION_PASSWORD=replicator123
       - PATRONI_ETCD_HOSTS=100.76.170.62:2379,100.115.210.113:2379,100.99.158.11:2379
       - PATRONI_SCOPE=mediqueue-cluster
@@ -53,7 +54,8 @@ services:
     image: rabbitmq:3.12-management-alpine
     environment:
       - RABBITMQ_ERLANG_COOKIE=MEDIQUEUE_COOKIE
-      - RABBITMQ_NODENAME=rabbit@node1
+      - RABBITMQ_USE_LONGNAME=true
+      - RABBITMQ_NODENAME=rabbit@100.76.170.62
       - RABBITMQ_DEFAULT_USER=mediqueue
       - RABBITMQ_DEFAULT_PASS=mediqueue123
     ports:
@@ -63,6 +65,7 @@ services:
       - "25672:25672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./infrastructure/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     restart: always
 
   redis:
@@ -87,19 +90,28 @@ services:
   api-gateway:
     build: ./services/apigateway
     environment:
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.11:5672
+      - PACIENTE_SERVICE_URL=http://100.76.170.62:8083
+      - CITA_SERVICE_URL=http://100.115.210.113:8081
+      - DOCTOR_SERVICE_URL=http://100.115.210.113:8082
+      - PAGO_SERVICE_URL=http://100.99.158.11:8084
+      - NOTIFICACION_SERVICE_URL=http://100.99.158.11:8085
     ports:
       - "8080:8080"
+    depends_on:
+      - paciente-service
     restart: always
 
   paciente-service:
     build: ./services/paciente_service
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.11:5672
     ports:
       - "8083:8083"
+    depends_on:
+      - haproxy
+      - rabbitmq
     restart: always
 
   frontend:

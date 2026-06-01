@@ -2,8 +2,12 @@ package payment_service.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import payment_service.dto.AppointmentLookupResponse;
 import payment_service.dto.PaymentRequest;
 import payment_service.dto.PaymentResponse;
 import payment_service.exception.PaymentNotFoundException;
@@ -19,16 +23,20 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentEventPublisher eventPublisher;
+    private final RestTemplate restTemplate;
 
-    public PaymentService(PaymentRepository paymentRepository, PaymentEventPublisher eventPublisher) {
+    @Value("${app.services.appointment-url}")
+    private String appointmentServiceUrl;
+
+    public PaymentService(PaymentRepository paymentRepository, PaymentEventPublisher eventPublisher, RestTemplate restTemplate) {
         this.paymentRepository = paymentRepository;
         this.eventPublisher = eventPublisher;
+        this.restTemplate = restTemplate;
     }
 
     @Transactional
     public PaymentResponse processPayment(PaymentRequest request, String idempotencyKey) {
-        logger.info("Iniciando procesamiento de pago. appointmentId={}, patientId={}",
-                request.appointmentId(), request.patientId());
+        logger.info("Iniciando procesamiento de pago. appointmentId={}", request.appointmentId());
 
         String normalizedIdempotencyKey = normalizeIdempotencyKey(idempotencyKey);
         if (normalizedIdempotencyKey != null) {
@@ -42,9 +50,11 @@ public class PaymentService {
             throw new RuntimeException("Esta cita ya fue pagada");
         }
 
+        String patientId = resolvePatientIdFromAppointment(request.appointmentId());
+
         Payment payment = new Payment();
         payment.setAppointmentId(request.appointmentId());
-        payment.setPatientId(request.patientId());
+        payment.setPatientId(patientId);
         payment.setAmount(request.amount());
         payment.setStatus("PENDING");
         payment.setIdempotencyKey(normalizedIdempotencyKey);
@@ -89,11 +99,29 @@ public class PaymentService {
         return normalized;
     }
 
+    private String resolvePatientIdFromAppointment(String appointmentId) {
+        if (appointmentId == null || appointmentId.isBlank()) {
+            throw new RuntimeException("appointmentId es obligatorio");
+        }
+
+        String baseUrl = appointmentServiceUrl.replaceAll("/+$", "");
+        String url = baseUrl + "/api/v1/appointments/" + appointmentId.trim();
+        try {
+            AppointmentLookupResponse appointment = restTemplate.getForObject(url, AppointmentLookupResponse.class);
+            if (appointment == null || appointment.patientId() == null || appointment.patientId().isBlank()) {
+                throw new RuntimeException("La cita no tiene paciente asociado");
+            }
+            return appointment.patientId();
+        } catch (RestClientException ex) {
+            logger.warn("No fue posible consultar la cita para procesar pago. appointmentId={}", appointmentId, ex);
+            throw new RuntimeException("No se pudo validar la cita indicada");
+        }
+    }
+
     private PaymentResponse toResponse(Payment payment) {
         return new PaymentResponse(
                 payment.getId(),
                 payment.getAppointmentId(),
-                payment.getPatientId(),
                 payment.getAmount(),
                 payment.getStatus()
         );

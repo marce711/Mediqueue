@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Search, IdCard, Phone, Mail, UserCheck } from 'lucide-react';
+import { Mail, Phone, Search, UserPlus } from 'lucide-react';
 import { pacienteService } from '../services/api';
 
 export default function Pacientes() {
@@ -32,7 +32,8 @@ export default function Pacientes() {
       setForm({ dpi: '', nombre: '', telefono: '', correo: '' });
       fetchPacientes();
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al procesar el registro. Verifique que el DPI sea único.' });
+      const detail = err.response?.data?.error || err.response?.data?.message;
+      setMessage({ type: 'error', text: detail || 'Error al procesar el registro. Verifique DPI, correo y telefono.' });
     }
   };
 
@@ -77,7 +78,8 @@ export default function Pacientes() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1 tracking-wider">Teléfono</label>
-                  <input 
+                  <input
+                    required
                     type="text" 
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border"
                     value={form.telefono}
@@ -86,7 +88,8 @@ export default function Pacientes() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase mb-1 tracking-wider">Email</label>
-                  <input 
+                  <input
+                    required
                     type="email" 
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border"
                     value={form.correo}

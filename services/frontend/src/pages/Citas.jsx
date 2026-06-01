@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { citaService, pacienteService, doctorService } from '../services/api';
-import { CalendarPlus, Search, Clock, CheckCircle, XCircle, User, Activity } from 'lucide-react';
+import { Activity, CalendarPlus, Clock, Search, User } from 'lucide-react';
 
 export default function Citas() {
   const [citas, setCitas] = useState([]);

@@ -1,105 +1,67 @@
 import React from 'react';
-import { LayoutGrid, Users, Calendar, CreditCard, Activity, Bell, Settings } from 'lucide-react';
+import { Calendar, CreditCard, LayoutGrid, Users } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 export default function Dashboard() {
-  const stats = [
-    { label: 'Pacientes Registrados', value: '0', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Citas Hoy', value: '0', icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Pagos Pendientes', value: '0', icon: CreditCard, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Alertas Médicas', value: '0', icon: Bell, color: 'text-amber-600', bg: 'bg-amber-50' },
-  ];
-
   return (
-    <div className="max-w-6xl mx-auto space-y-10 py-6">
-      <header className="flex justify-between items-end border-b border-gray-200 pb-6">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Panel de Control</h2>
-          <p className="text-gray-500 mt-1">Bienvenido al Sistema de Gestión Clínica Mediqueue.</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm font-medium text-gray-900">{new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-          <p className="text-xs text-gray-400">Estado del Sistema: <span className="text-green-500 font-bold">OPERATIVO</span></p>
-        </div>
+    <div className="mx-auto max-w-6xl space-y-8 py-2">
+      <header className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <p className="text-sm font-semibold uppercase tracking-wider text-[#2f6f62]">Recepcion y admision</p>
+        <h2 className="mt-2 text-3xl font-bold text-slate-950">Centro de trabajo Mediqueue</h2>
+        <p className="mt-2 max-w-2xl text-slate-600">
+          Acceso directo a expedientes, agenda medica y pagos por cita.
+        </p>
       </header>
 
-      {/* Estadísticas Profesionales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              </div>
-              <div className={`p-3 rounded-lg ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
-                <stat.icon size={24} />
-              </div>
+      <section className="space-y-5">
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <LayoutGrid size={20} className="text-[#2f6f62]" />
+          Operaciones frecuentes
+        </h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <NavLink to="/pacientes" className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:ring-[#2f6f62]">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-[#e0eee8] text-[#12312b]">
+              <Users />
             </div>
-          </div>
-        ))}
-      </div>
+            <p className="text-lg font-bold text-slate-950">Registrar paciente</p>
+            <p className="mt-2 text-sm text-slate-600">Alta de expediente clinico y datos de contacto.</p>
+          </NavLink>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Acceso Rápido */}
-        <div className="lg:col-span-2 space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <LayoutGrid size={20} className="text-blue-600" />
-            Operaciones Frecuentes
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <NavLink to="/pacientes" className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition group">
-              <div className="p-3 bg-gray-50 rounded-full group-hover:bg-white transition-colors">
-                <Users className="text-gray-600 group-hover:text-blue-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">Nuevo Paciente</p>
-                <p className="text-xs text-gray-500">Alta de expediente clínico</p>
-              </div>
-            </NavLink>
-            <NavLink to="/citas" className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition group">
-              <div className="p-3 bg-gray-50 rounded-full group-hover:bg-white transition-colors">
-                <Calendar className="text-gray-600 group-hover:text-indigo-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">Agenda Médica</p>
-                <p className="text-xs text-gray-500">Programación de consultas</p>
-              </div>
-            </NavLink>
-            <NavLink to="/pagos" className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:border-emerald-300 hover:bg-emerald-50 transition group">
-              <div className="p-3 bg-gray-50 rounded-full group-hover:bg-white transition-colors">
-                <CreditCard className="text-gray-600 group-hover:text-emerald-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">Caja y Cobros</p>
-                <p className="text-xs text-gray-500">Conciliación de pagos</p>
-              </div>
-            </NavLink>
-            <div className="flex items-center gap-4 p-4 bg-gray-50 border border-gray-100 rounded-lg opacity-60 cursor-not-allowed">
-              <div className="p-3 bg-white rounded-full">
-                <Settings className="text-gray-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-400 text-sm">Configuración</p>
-                <p className="text-xs text-gray-400">Próximamente</p>
-              </div>
+          <NavLink to="/citas" className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:ring-[#2f6f62]">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-[#fff1cf] text-[#6f4b00]">
+              <Calendar />
             </div>
+            <p className="text-lg font-bold text-slate-950">Agendar cita</p>
+            <p className="mt-2 text-sm text-slate-600">Validacion de paciente, doctor y horario disponible.</p>
+          </NavLink>
+
+          <NavLink to="/pagos" className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:ring-[#2f6f62]">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-[#e8edf6] text-[#253a63]">
+              <CreditCard />
+            </div>
+            <p className="text-lg font-bold text-slate-950">Pago por cita</p>
+            <p className="mt-2 text-sm text-slate-600">Consulta y registro de cobros usando el ID de la cita.</p>
+          </NavLink>
+        </div>
+      </section>
+
+      <section className="rounded-md bg-[#12312b] p-6 text-white">
+        <h3 className="text-xl font-bold">Flujo recomendado</h3>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="border-l-4 border-[#f6c85f] pl-4">
+            <p className="font-semibold">1. Expediente</p>
+            <p className="mt-1 text-sm text-white/70">Registre o ubique al paciente por DPI.</p>
+          </div>
+          <div className="border-l-4 border-[#f6c85f] pl-4">
+            <p className="font-semibold">2. Cita</p>
+            <p className="mt-1 text-sm text-white/70">Agende la consulta y conserve el ID generado.</p>
+          </div>
+          <div className="border-l-4 border-[#f6c85f] pl-4">
+            <p className="font-semibold">3. Pago</p>
+            <p className="mt-1 text-sm text-white/70">Procese el cobro ingresando el ID de cita.</p>
           </div>
         </div>
-
-        {/* Resumen de Actividad */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Activity size={20} className="text-red-600" />
-            Actividad Reciente
-          </h3>
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm divide-y divide-gray-100">
-            <div className="p-4 text-center py-10">
-              <p className="text-sm text-gray-400 italic">No hay actividad registrada en la última hora.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }

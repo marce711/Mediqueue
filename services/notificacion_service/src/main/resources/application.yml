@@ -5,7 +5,7 @@ spring:
   application:
     name: notificacion-service
   rabbitmq:
-    addresses: ${SPRING_RABBITMQ_ADDRESSES:100.76.170.62,100.115.210.113,100.99.158.11}
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:100.76.170.62:5672,100.115.210.113:5672,100.99.158.11:5672}
     username: ${SPRING_RABBITMQ_USERNAME:mediqueue}
     password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
     listener:

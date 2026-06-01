@@ -25,6 +25,7 @@ services:
       - NODE_NAME=postgres2
       - NODE_IP=100.115.210.113
       - POSTGRES_PASSWORD=mediqueue123
+      - POSTGRES_APP_PASSWORD=mediqueue123
       - REPLICATION_PASSWORD=replicator123
       - PATRONI_ETCD_HOSTS=100.76.170.62:2379,100.115.210.113:2379,100.99.158.11:2379
       - PATRONI_SCOPE=mediqueue-cluster
@@ -52,7 +53,8 @@ services:
     image: rabbitmq:3.12-management-alpine
     environment:
       - RABBITMQ_ERLANG_COOKIE=MEDIQUEUE_COOKIE
-      - RABBITMQ_NODENAME=rabbit@node2
+      - RABBITMQ_USE_LONGNAME=true
+      - RABBITMQ_NODENAME=rabbit@100.115.210.113
       - RABBITMQ_DEFAULT_USER=mediqueue
       - RABBITMQ_DEFAULT_PASS=mediqueue123
     ports:
@@ -62,6 +64,7 @@ services:
       - "25672:25672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./infrastructure/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     restart: always
 
   redis:
@@ -86,21 +89,30 @@ services:
   cita-service:
     build: ./services/cita_service
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.11:5672
       - SPRING_DATA_REDIS_SENTINEL_MASTER=mymaster
       - SPRING_DATA_REDIS_SENTINEL_NODES=100.76.170.62:26379,100.115.210.113:26379,100.99.158.11:26379
+      - PATIENT_SERVICE_URL=http://100.76.170.62:8083
+      - DOCTOR_SERVICE_URL=http://100.115.210.113:8082
     ports:
       - "8081:8081"
+    depends_on:
+      - haproxy
+      - rabbitmq
+      - redis-sentinel
     restart: always
 
   doctor-horario:
     build: ./services/doctor_horario
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5000/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62,100.115.210.113,100.99.158.11
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.11:5672
     ports:
       - "8082:8082"
+    depends_on:
+      - haproxy
+      - rabbitmq
     restart: always
 
 volumes:

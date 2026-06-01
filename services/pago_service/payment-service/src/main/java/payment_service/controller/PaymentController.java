@@ -38,8 +38,7 @@ public class PaymentController {
             @Valid @RequestBody PaymentRequest payment,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey
     ) {
-        logger.info("Solicitud recibida para procesar pago. appointmentId={}, patientId={}",
-                payment.appointmentId(), payment.patientId());
+        logger.info("Solicitud recibida para procesar pago. appointmentId={}", payment.appointmentId());
         PaymentResponse result = paymentService.processPayment(payment, idempotencyKey);
         logger.info("Pago procesado exitosamente. paymentId={}, status={}", result.id(), result.status());
         return ResponseEntity.status(HttpStatus.CREATED).body(result);

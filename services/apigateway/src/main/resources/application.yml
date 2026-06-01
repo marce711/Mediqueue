@@ -6,7 +6,7 @@ spring:
     name: api-gateway
 
   rabbitmq:
-    addresses: ${SPRING_RABBITMQ_ADDRESSES:100.76.170.62,100.115.210.113,100.99.158.11}
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:100.76.170.62:5672,100.115.210.113:5672,100.99.158.11:5672}
     username: ${SPRING_RABBITMQ_USERNAME:mediqueue}
     password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
 
@@ -20,7 +20,7 @@ spring:
           routes:
 
             - id: paciente-service
-              uri: http://100.76.170.62:8083 # Nodo 1
+              uri: ${PACIENTE_SERVICE_URL:http://100.76.170.62:8083}
               predicates:
                 - Path=/api/pacientes/**
               filters:
@@ -30,36 +30,44 @@ spring:
                     fallbackUri: forward:/fallback/paciente
 
             - id: cita-service
-              uri: http://100.115.210.113:8081 # Nodo 2
+              uri: ${CITA_SERVICE_URL:http://100.115.210.113:8081}
               predicates:
                 - Path=/api/v1/appointments/**
               filters:
                 - name: CircuitBreaker
                   args:
                     name: citaCB
+                    fallbackUri: forward:/fallback/cita
 
             - id: doctor-horario
-              uri: http://100.115.210.113:8082 # Nodo 2
+              uri: ${DOCTOR_SERVICE_URL:http://100.115.210.113:8082}
               predicates:
                 - Path=/api/horarios/**
               filters:
                 - name: CircuitBreaker
                   args:
                     name: doctorCB
+                    fallbackUri: forward:/fallback/doctor
 
             - id: pago-service
-              uri: http://100.99.158.11:8084 # Nodo 3
+              uri: ${PAGO_SERVICE_URL:http://100.99.158.11:8084}
               predicates:
                 - Path=/api/payments/**
               filters:
                 - name: CircuitBreaker
                   args:
                     name: pagoCB
+                    fallbackUri: forward:/fallback/pago
 
             - id: notificacion-service
-              uri: http://100.99.158.11:8085 # Nodo 3
+              uri: ${NOTIFICACION_SERVICE_URL:http://100.99.158.11:8085}
               predicates:
                 - Path=/api/notificaciones/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notificacionCB
+                    fallbackUri: forward:/fallback/notificacion
 
 resilience4j:
   circuitbreaker:
@@ -76,6 +84,9 @@ resilience4j:
         slidingWindowSize: 10
         failureRateThreshold: 50
       pagoCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+      notificacionCB:
         slidingWindowSize: 10
         failureRateThreshold: 50
 

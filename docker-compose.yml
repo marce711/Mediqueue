@@ -136,6 +136,7 @@ services:
       SPRING_DATASOURCE_USERNAME: mediqueue
       SPRING_DATASOURCE_PASSWORD: mediqueue123
       SPRING_RABBITMQ_ADDRESSES: rabbitmq:5672
+      APP_APPOINTMENT_SERVICE_URL: http://cita-service:8081
     depends_on:
       postgres:
         condition: service_healthy
@@ -166,6 +167,11 @@ services:
     build: ./services/apigateway
     environment:
       SPRING_RABBITMQ_ADDRESSES: rabbitmq:5672
+      PACIENTE_SERVICE_URL: http://paciente-service:8083
+      CITA_SERVICE_URL: http://cita-service:8081
+      DOCTOR_SERVICE_URL: http://doctor-horario:8082
+      PAGO_SERVICE_URL: http://pago-service:8084
+      NOTIFICACION_SERVICE_URL: http://notificacion-service:8085
     ports:
       - "8080:8080"
     depends_on:

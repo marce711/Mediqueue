@@ -16,6 +16,8 @@ RUN pip3 install patroni[etcd] psutil --break-system-packages
 
 # Create directories for Patroni and pgBackRest
 RUN mkdir -p /home/postgres /var/lib/postgresql/data /var/log/patroni /var/lib/pgbackrest
+COPY init-db.sh /home/postgres/init-db.sh
+RUN chmod +x /home/postgres/init-db.sh
 RUN chown -R postgres:postgres /home/postgres /var/lib/postgresql /var/log/patroni /var/lib/pgbackrest
 
 USER postgres
