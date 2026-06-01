@@ -132,3 +132,16 @@ WHERE estado_cita = 'CONFIRMADA';
 CREATE UNIQUE INDEX ux_paciente_horario_activo 
 ON citas (paciente_id, horario_id) 
 WHERE estado_cita = 'CONFIRMADA';
+
+ALTER SCHEMA public OWNER TO mediqueue;
+ALTER TABLE pacientes OWNER TO mediqueue;
+ALTER TABLE especialidades OWNER TO mediqueue;
+ALTER TABLE doctores OWNER TO mediqueue;
+ALTER TABLE horarios OWNER TO mediqueue;
+ALTER TABLE citas OWNER TO mediqueue;
+ALTER TABLE pagos OWNER TO mediqueue;
+ALTER TABLE llaves_idempotencia OWNER TO mediqueue;
+ALTER TABLE eventos_salientes OWNER TO mediqueue;
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mediqueue;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mediqueue;

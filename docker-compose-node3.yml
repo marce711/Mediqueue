@@ -78,10 +78,12 @@ services:
     image: bitnami/redis-sentinel:latest
     environment:
       - REDIS_SENTINEL_QUORUM=2
-      - REDIS_MASTER_NAME=mymaster
+      - REDIS_MASTER_SET=mymaster
       - REDIS_MASTER_HOST=100.76.170.62
       - REDIS_MASTER_PORT_NUMBER=6379
       - REDIS_SENTINEL_PORT_NUMBER=26379
+      - REDIS_SENTINEL_ANNOUNCE_IP=100.99.158.111
+      - REDIS_SENTINEL_ANNOUNCE_PORT=26379
     ports:
       - "26379:26379"
     restart: always

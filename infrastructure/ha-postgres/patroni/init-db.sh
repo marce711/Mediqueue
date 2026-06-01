@@ -125,6 +125,72 @@ CREATE TABLE IF NOT EXISTS pagos (
     CONSTRAINT chk_pago_estado CHECK (estado IN ('PENDIENTE', 'PAGADO', 'FALLIDO', 'CANCELADO'))
 );
 
+-- 8. Tabla: LLAVES_IDEMPOTENCIA
+CREATE TABLE IF NOT EXISTS llaves_idempotencia (
+    client_id UUID PRIMARY KEY,
+    servicio_origen VARCHAR(50) NOT NULL,
+    request_hash VARCHAR(255),
+    idempotency_key VARCHAR(120) UNIQUE NOT NULL,
+    cuerpo_respuesta TEXT,
+    creado_en TIMESTAMP DEFAULT NOW(),
+    expira_en TIMESTAMP
+);
+
+-- 9. Tabla: EVENTOS_SALIENTES
+CREATE TABLE IF NOT EXISTS eventos_salientes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate_id UUID NOT NULL,
+    aggregate_type VARCHAR(80) NOT NULL,
+    event_type VARCHAR(120) NOT NULL,
+    exchange_name VARCHAR(160) NOT NULL,
+    routing_key VARCHAR(160) NOT NULL,
+    payload TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+    intentos INT NOT NULL DEFAULT 0,
+    creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+    procesado_en TIMESTAMP NULL,
+    CONSTRAINT chk_outbox_status CHECK (status IN ('PENDIENTE', 'PROCESADO'))
+);
+
+-- Tablas usadas por los servicios actuales de citas y pagos.
+CREATE TABLE IF NOT EXISTS appointments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id VARCHAR(80) NOT NULL,
+    doctor_id VARCHAR(80) NOT NULL,
+    appointment_date TIMESTAMP NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    idempotency_key VARCHAR(120),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    version BIGINT
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+    id BIGSERIAL PRIMARY KEY,
+    appointment_id VARCHAR(80) NOT NULL,
+    patient_id VARCHAR(80) NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
+    status VARCHAR(30) NOT NULL,
+    idempotency_key VARCHAR(120),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    version BIGINT
+);
+
+CREATE TABLE IF NOT EXISTS outbox_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate_id VARCHAR(120) NOT NULL,
+    aggregate_type VARCHAR(80) NOT NULL,
+    event_type VARCHAR(120) NOT NULL,
+    exchange_name VARCHAR(160) NOT NULL,
+    routing_key VARCHAR(160) NOT NULL,
+    payload TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    attempts INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMP NULL
+);
+
 -- 10. Índices
 CREATE UNIQUE INDEX IF NOT EXISTS ux_doctor_horario_activo 
 ON citas (doctor_id, horario_id) 
@@ -133,5 +199,48 @@ WHERE estado_cita = 'CONFIRMADA';
 CREATE UNIQUE INDEX IF NOT EXISTS ux_paciente_horario_activo 
 ON citas (paciente_id, horario_id) 
 WHERE estado_cita = 'CONFIRMADA';
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_appointments_idempotency_key_jpa
+ON appointments (idempotency_key)
+WHERE idempotency_key IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_appointments_doctor_datetime_jpa
+ON appointments (doctor_id, appointment_date);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_appointments_patient_datetime_jpa
+ON appointments (patient_id, appointment_date);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_payments_idempotency_key_jpa
+ON payments (idempotency_key)
+WHERE idempotency_key IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_payments_appointment_id_jpa
+ON payments (appointment_id);
+
+DO
+\$\$
+DECLARE
+    object_name text;
+BEGIN
+    FOR object_name IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('ALTER TABLE public.%I OWNER TO mediqueue', object_name);
+    END LOOP;
+
+    FOR object_name IN
+        SELECT sequencename
+        FROM pg_sequences
+        WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('ALTER SEQUENCE public.%I OWNER TO mediqueue', object_name);
+    END LOOP;
+END
+\$\$;
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mediqueue;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mediqueue;
 
 SQL
