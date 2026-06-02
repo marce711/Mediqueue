@@ -19,6 +19,7 @@ bootstrap:
     postgresql:
       use_pg_rewind: true
       parameters:
+        max_connections: 100
         wal_level: logical
         max_wal_senders: 10
         max_replication_slots: 10
