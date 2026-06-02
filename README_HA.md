@@ -107,6 +107,109 @@ Docker Compose no reubica automaticamente contenedores entre maquinas cuando una
 
 Para cumplir la prueba de apagar una computadora sin orquestador externo, mantenga los tres compose arriba antes de la demo y use la URL del nodo que siga disponible.
 
+## Recuperacion si alguien ejecuto `down -v`
+
+`down -v` borra volumenes. Si se ejecuta en algun nodo, lo primero es
+recuperar quorum de etcd y asegurar que el nodo con datos sea el primero que
+toma el liderazgo de Patroni. No intente restaurar datos mientras HAProxy no
+tenga un backend de escritura activo.
+
+Estado de falla tipico:
+
+- `curl http://localhost:2379/health` devuelve `RAFT NO LEADER`.
+- `curl http://localhost:8008/primary` devuelve `503`.
+- HAProxy muestra `postgres_write` sin servidores disponibles.
+- Los microservicios fallan con errores JDBC contra `haproxy:5432`.
+
+Recuperacion recomendada si el nodo B conserva datos:
+
+1. En las tres maquinas, detener aplicacion y Postgres. No usar `-v`.
+
+```powershell
+# PC A
+docker compose -f docker-compose-node1.yml stop frontend api-gateway paciente-service cita-service doctor-horario pago-service notificacion-service postgres1
+
+# PC B
+docker compose -f docker-compose-node2.yml stop frontend api-gateway paciente-service cita-service doctor-horario pago-service notificacion-service postgres2
+
+# PC C
+docker compose -f docker-compose-node3.yml stop frontend api-gateway paciente-service cita-service doctor-horario pago-service notificacion-service postgres3
+```
+
+2. En las tres maquinas, recrear solo etcd para recuperar quorum.
+
+```powershell
+# PC A
+docker compose -f docker-compose-node1.yml up -d --force-recreate etcd
+
+# PC B
+docker compose -f docker-compose-node2.yml up -d --force-recreate etcd
+
+# PC C
+docker compose -f docker-compose-node3.yml up -d --force-recreate etcd
+```
+
+Verificar en al menos dos maquinas:
+
+```powershell
+curl --noproxy "*" http://localhost:2379/health
+```
+
+Debe responder `{"health":"true"}`.
+
+3. Si quedo un lock viejo apuntando a un nodo caido, eliminar solo el DCS de
+Patroni. Esto no borra datos de Postgres.
+
+```powershell
+curl --noproxy "*" -X DELETE "http://localhost:2379/v2/keys/db/mediqueue-cluster?recursive=true"
+```
+
+4. Levantar primero Postgres del nodo que conserva los datos. En este proyecto,
+si B conserva datos, iniciar B antes que A y C.
+
+```powershell
+# PC B
+docker compose -f docker-compose-node2.yml up -d postgres2 haproxy
+curl --noproxy "*" http://localhost:8008/primary
+```
+
+El endpoint `/primary` debe responder `200`. Si responde `503`, no seguir con
+microservicios todavia.
+
+5. Cuando B sea primario, levantar A y C para que se unan como replicas.
+
+```powershell
+# PC A
+docker compose -f docker-compose-node1.yml up -d postgres1 haproxy
+
+# PC C
+docker compose -f docker-compose-node3.yml up -d postgres3 haproxy
+```
+
+6. Levantar todo en las tres maquinas.
+
+```powershell
+docker compose -f docker-compose-node1.yml up -d --build
+docker compose -f docker-compose-node2.yml up -d --build
+docker compose -f docker-compose-node3.yml up -d --build
+```
+
+7. Restaurar datos minimos si las tablas quedaron vacias.
+
+```powershell
+Get-Content infrastructure/postgres/restore-minimal-data.sql | docker compose -f docker-compose-node2.yml exec -T -e PGPASSWORD=mediqueue123 postgres2 psql -h haproxy -p 5432 -U postgres -d mediqueueadmin -v ON_ERROR_STOP=1
+```
+
+Si ejecuta el script desde el host en vez del contenedor:
+
+```powershell
+$env:PGPASSWORD="mediqueue123"
+psql -h localhost -p 5000 -U postgres -d mediqueueadmin -f infrastructure/postgres/restore-minimal-data.sql
+```
+
+El script es idempotente: puede ejecutarse mas de una vez. Restaura
+especialidades con precios, un paciente demo, un doctor demo y horarios.
+
 ## Reglas de negocio
 
 - Paciente unico por DPI.

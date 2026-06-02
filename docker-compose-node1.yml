@@ -15,6 +15,8 @@ services:
       - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster-mediqueue
       - ETCD_INITIAL_CLUSTER=node1=http://100.76.170.62:2380,node2=http://100.115.210.113:2380,node3=http://100.99.158.111:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
+    volumes:
+      - etcd_data:/bitnami/etcd
     ports:
       - "2379:2379"
       - "2380:2380"
@@ -221,6 +223,7 @@ services:
     restart: always
 
 volumes:
+  etcd_data:
   postgres1_data:
   rabbitmq_data:
   prometheus_data:
