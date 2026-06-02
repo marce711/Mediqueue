@@ -20,12 +20,12 @@ scrape_configs:
   - job_name: cita_service
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ['100.113.35.88:8081']
+      - targets: ['100.115.210.113:8081']
 
   - job_name: doctor_horario
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ['100.113.35.88:8082']
+      - targets: ['100.115.210.113:8082']
 
   - job_name: pago_service
     metrics_path: /actuator/prometheus
@@ -36,4 +36,3 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ['100.99.158.111:8085']
-

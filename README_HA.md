@@ -5,7 +5,7 @@ El despliegue objetivo usa Docker Compose en 3 maquinas independientes. No usa o
 ## Nodos
 
 - Nodo 1: `100.76.170.62`, plano de aplicacion completo, PostgreSQL/Patroni, HAProxy, RabbitMQ, Redis Sentinel y pgAdmin.
-- Nodo 2: `100.113.35.88`, plano de aplicacion completo, PostgreSQL/Patroni, HAProxy, RabbitMQ, Redis Sentinel y pgAdmin.
+- Nodo 2: `100.115.210.113`, plano de aplicacion completo, PostgreSQL/Patroni, HAProxy, RabbitMQ, Redis Sentinel y pgAdmin.
 - Nodo 3: `100.99.158.111`, plano de aplicacion completo, PostgreSQL/Patroni, HAProxy, RabbitMQ, Redis Sentinel y pgAdmin.
 
 ## Base de datos HA
@@ -68,7 +68,7 @@ docker compose -f docker-compose-node1.yml exec postgres1 psql -U postgres -d me
 Use cualquier frontend disponible:
 
 - Nodo 1: `http://100.76.170.62/`
-- Nodo 2: `http://100.113.35.88/`
+- Nodo 2: `http://100.115.210.113/`
 - Nodo 3: `http://100.99.158.111/`
 
 Cada gateway (`http://<IP_NODO>:8080`) tiene URLs de fallback hacia servicios
@@ -92,7 +92,7 @@ En pgAdmin agregue un servidor:
 - Password: `mediqueue123`
 
 Si usa un pgAdmin externo al compose, use como host la IP de cualquier maquina
-con HAProxy, por ejemplo `100.113.35.88`, y puerto `5000`.
+con HAProxy, por ejemplo `100.115.210.113`, y puerto `5000`.
 
 Para ver registros: `Servers > Mediqueue HA > Databases > mediqueueadmin > Schemas > public > Tables`, clic derecho sobre una tabla y `View/Edit Data`.
 
@@ -218,4 +218,3 @@ especialidades con precios, un paciente demo, un doctor demo y horarios.
 - Disponibilidad por agenda real del doctor y por traslape con citas activas.
 - La cita se crea `PENDING`; el pago exacto confirma la cita como `CONFIRMED`.
 - Cancelacion permitida solo con 48 horas o mas de anticipacion.
-
