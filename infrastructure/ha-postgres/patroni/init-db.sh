@@ -91,6 +91,9 @@ CREATE TABLE IF NOT EXISTS doctores (
     CONSTRAINT chk_doctor_estado CHECK (estado IN ('ACTIVO', 'INACTIVO'))
 );
 
+ALTER TABLE doctores
+ADD COLUMN IF NOT EXISTS max_appointments_per_day INT NOT NULL DEFAULT 10;
+
 -- 5. Tabla: HORARIOS
 CREATE TABLE IF NOT EXISTS horarios (
     id_horario UUID PRIMARY KEY DEFAULT gen_random_uuid(),

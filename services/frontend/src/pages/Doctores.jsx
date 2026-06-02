@@ -20,6 +20,8 @@ export default function Doctores() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [especialidadesError, setEspecialidadesError] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ show: false, doctorId: null, nombre: '' });
+  
   const [form, setForm] = useState({
     nombre: '',
     specialtyId: '',
@@ -34,17 +36,30 @@ export default function Doctores() {
     fetchEspecialidades();
   }, []);
 
-  const handleToggleStatus = async (id) => {
+  const handleToggleStatus = async () => {
+    const { doctorId } = confirmModal;
     try {
       setLoading(true);
-      await doctorService.cambiarEstado(id);
+      await doctorService.cambiarEstado(doctorId);
+      setMessage({ type: 'success', text: 'Estado del doctor actualizado correctamente.' });
       fetchDoctores();
     } catch (err) {
       console.error(err);
       setMessage({ type: 'error', text: 'No se pudo cambiar el estado del doctor.' });
     } finally {
       setLoading(false);
+      setConfirmModal({ show: false, doctorId: null, nombre: '' });
+      setTimeout(() => setMessage(null), 3000);
     }
+  };
+
+  const openConfirmModal = (doctor) => {
+    setConfirmModal({ 
+      show: true, 
+      doctorId: doctor.id, 
+      nombre: doctor.nombre,
+      action: doctor.activo ? 'desactivar' : 'activar'
+    });
   };
 
   const fetchDoctores = async () => {
@@ -295,7 +310,7 @@ export default function Doctores() {
                   <div className="flex flex-col items-end gap-2">
                     <p className="font-mono text-xs text-slate-400">ID {doctor.id}</p>
                     <button 
-                      onClick={() => handleToggleStatus(doctor.id)}
+                      onClick={() => openConfirmModal(doctor)}
                       className={`text-xs px-3 py-1 rounded border transition ${doctor.activo ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'}`}
                     >
                       {doctor.activo ? 'Desactivar' : 'Activar'}
@@ -323,6 +338,45 @@ export default function Doctores() {
           </div>
         </section>
       </div>
+
+      {/* Modal de Confirmacion */}
+      {confirmModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl ring-1 ring-slate-200">
+            <h3 className="text-lg font-bold text-slate-950">Confirmar acción</h3>
+            <p className="mt-2 text-slate-600">
+              ¿Está seguro de que desea <strong>{confirmModal.action}</strong> al doctor <strong>{confirmModal.nombre}</strong>?
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button 
+                onClick={() => setConfirmModal({ show: false, doctorId: null, nombre: '' })}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleToggleStatus}
+                className={`rounded-md px-4 py-2 text-sm font-semibold text-white ${confirmModal.action === 'desactivar' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alerta profesional flotante */}
+      {message && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4">
+          <div className={`flex items-center gap-3 rounded-lg p-4 shadow-lg ring-1 ${
+            message.type === 'success' ? 'bg-green-600 text-white ring-green-500' : 'bg-red-600 text-white ring-red-500'
+          }`}>
+            {message.type === 'success' ? <UserPlus size={20} /> : <X size={20} />}
+            <p className="text-sm font-bold">{message.text}</p>
+            <button onClick={() => setMessage(null)} className="ml-2 hover:opacity-70"><X size={16} /></button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
