@@ -200,6 +200,20 @@ services:
       - haproxy
     restart: always
 
+  k6:
+    image: grafana/k6:latest
+    profiles:
+      - tools
+    entrypoint: ["k6"]
+    command: ["version"]
+    working_dir: /workspace
+    environment:
+      - K6_PROMETHEUS_RW_SERVER_URL=http://100.76.170.62:9090/api/v1/write
+      - K6_PROMETHEUS_RW_TREND_STATS=p(95),p(99),avg,min,max
+    volumes:
+      - ./:/workspace
+    restart: "no"
+
 volumes:
   etcd_data:
   postgres2_data:
