@@ -110,6 +110,7 @@ public class DoctorService {
                 doctor.getTelefono(),
                 doctor.getCorreo(),
                 doctor.isActivo(),
+                doctor.getMaxAppointmentsPerDay(),
                 horarios.stream().map(this::toHorarioResponse).toList()
         );
     }

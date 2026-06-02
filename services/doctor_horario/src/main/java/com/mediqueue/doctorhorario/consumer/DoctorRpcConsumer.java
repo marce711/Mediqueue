@@ -50,7 +50,7 @@ public class DoctorRpcConsumer {
                     .orElseGet(() -> new DoctorValidationResponse(false, null, null, 0));
         } catch (IllegalArgumentException e) {
             logger.error("Formato de doctorId invalido: {}", request.doctorId());
-            return new DoctorValidationResponse(false, null, null);
+            return new DoctorValidationResponse(false, null, null, 0);
         }
     }
 
