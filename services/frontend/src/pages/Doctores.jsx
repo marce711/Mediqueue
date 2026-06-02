@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Clock, Plus, Trash2, UserPlus } from 'lucide-react';
+import { Calendar, Clock, Plus, Trash2, UserPlus, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { doctorService } from '../services/api';
 
 const dias = [
@@ -20,7 +20,7 @@ export default function Doctores() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [especialidadesError, setEspecialidadesError] = useState(null);
-  const [confirmModal, setConfirmModal] = useState({ show: false, doctorId: null, nombre: '' });
+  const [confirmModal, setConfirmModal] = useState({ show: false, doctorId: null, nombre: '', action: '' });
   
   const [form, setForm] = useState({
     nombre: '',
@@ -38,6 +38,7 @@ export default function Doctores() {
 
   const handleToggleStatus = async () => {
     const { doctorId } = confirmModal;
+    if (!doctorId) return;
     try {
       setLoading(true);
       await doctorService.cambiarEstado(doctorId);
@@ -48,8 +49,8 @@ export default function Doctores() {
       setMessage({ type: 'error', text: 'No se pudo cambiar el estado del doctor.' });
     } finally {
       setLoading(false);
-      setConfirmModal({ show: false, doctorId: null, nombre: '' });
-      setTimeout(() => setMessage(null), 3000);
+      setConfirmModal({ show: false, doctorId: null, nombre: '', action: '' });
+      setTimeout(() => setMessage(null), 4000);
     }
   };
 
@@ -66,7 +67,7 @@ export default function Doctores() {
     try {
       setLoading(true);
       const res = await doctorService.listar();
-      setDoctores(res.data);
+      setDoctores(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -80,11 +81,10 @@ export default function Doctores() {
       const res = await doctorService.listarEspecialidades();
       const data = Array.isArray(res.data) ? res.data : [];
       
-      // Deduplicar especialidades por nombre
       const uniqueSpecs = [];
       const seen = new Set();
       data.forEach(esp => {
-        if (!seen.has(esp.name.toLowerCase().trim())) {
+        if (esp.name && !seen.has(esp.name.toLowerCase().trim())) {
           seen.add(esp.name.toLowerCase().trim());
           uniqueSpecs.push(esp);
         }
@@ -130,38 +130,33 @@ export default function Doctores() {
       setMessage(null);
       await doctorService.crear({
         ...form,
-        specialtyId: form.specialtyId,
-        telefono: form.telefono || null,
-        correo: form.correo || null,
         activo: true,
       });
       setMessage({ type: 'success', text: 'Doctor y horarios registrados correctamente.' });
-      setForm({ nombre: '', specialtyId: especialidades[0]?.id || '', telefono: '', correo: '', horarios: [{ ...emptySchedule }] });
+      setForm({ nombre: '', specialtyId: especialidades[0]?.id || '', telefono: '', correo: '', maxAppointmentsPerDay: 10, horarios: [{ ...emptySchedule }] });
       fetchDoctores();
     } catch (err) {
-      const validationErrors = err.response?.data?.validationErrors;
-      const detail = validationErrors
-        ? Object.values(validationErrors).join(' ')
-        : err.response?.data?.message || err.response?.data?.error;
+      const detail = err.response?.data?.message || err.response?.data?.error;
       setMessage({ type: 'error', text: detail || 'No se pudo registrar el doctor.' });
     } finally {
       setLoading(false);
+      setTimeout(() => setMessage(null), 4000);
     }
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 py-2">
+    <div className="mx-auto max-w-6xl space-y-8 py-2 px-4">
       <header className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <p className="text-sm font-semibold uppercase tracking-wider text-[#2f6f62]">Personal medico</p>
-        <h2 className="mt-2 text-3xl font-bold text-slate-950">Doctores y horarios</h2>
-        <p className="mt-2 text-slate-600">Registre especialistas y sus bloques de atencion disponibles.</p>
+        <p className="text-sm font-semibold uppercase tracking-wider text-[#2f6f62]">Personal Medico</p>
+        <h2 className="mt-2 text-3xl font-bold text-slate-950">Doctores y Horarios</h2>
+        <p className="mt-2 text-slate-600">Registre especialistas y gestione sus estados de disponibilidad.</p>
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[420px_1fr]">
         <section className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <h3 className="mb-5 flex items-center gap-2 text-lg font-bold text-slate-950">
             <UserPlus size={20} className="text-[#2f6f62]" />
-            Nuevo doctor
+            Nuevo Doctor
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -169,7 +164,7 @@ export default function Doctores() {
               <label className="block text-sm font-semibold text-slate-700">Nombre completo</label>
               <input
                 required
-                className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:outline-none focus:ring-2 focus:ring-[#2f6f62]/20"
+                className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:ring-2 focus:ring-[#2f6f62]/20 outline-none"
                 value={form.nombre}
                 onChange={e => setForm({ ...form, nombre: e.target.value })}
               />
@@ -178,30 +173,20 @@ export default function Doctores() {
               <label className="block text-sm font-semibold text-slate-700">Especialidad</label>
               <select
                 required
-                className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:outline-none focus:ring-2 focus:ring-[#2f6f62]/20"
+                className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] outline-none"
                 value={form.specialtyId}
                 onChange={e => setForm({ ...form, specialtyId: e.target.value })}
               >
-                <option value="" disabled>
-                  {especialidades.length === 0 ? 'No hay especialidades disponibles' : 'Seleccione una especialidad'}
-                </option>
                 {especialidades.map(esp => (
-                  <option key={esp.id} value={esp.id}>
-                    {esp.name} - Q {Number(esp.consultationPrice || 0).toFixed(2)}
-                  </option>
+                  <option key={esp.id} value={esp.id}>{esp.name} - Q {Number(esp.consultationPrice).toFixed(2)}</option>
                 ))}
               </select>
-              {especialidadesError && (
-                <p className="mt-2 rounded-md bg-red-50 p-2 text-xs text-red-700 ring-1 ring-red-200">
-                  {especialidadesError}
-                </p>
-              )}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-semibold text-slate-700">Telefono</label>
                 <input
-                  className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:outline-none focus:ring-2 focus:ring-[#2f6f62]/20"
+                  className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm outline-none"
                   value={form.telefono}
                   onChange={e => setForm({ ...form, telefono: e.target.value })}
                 />
@@ -211,90 +196,50 @@ export default function Doctores() {
                 <input
                   type="number"
                   min="1"
-                  className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:outline-none focus:ring-2 focus:ring-[#2f6f62]/20"
+                  className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm outline-none"
                   value={form.maxAppointmentsPerDay}
                   onChange={e => setForm({ ...form, maxAppointmentsPerDay: parseInt(e.target.value) })}
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700">Correo</label>
-              <input
-                type="email"
-                className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:outline-none focus:ring-2 focus:ring-[#2f6f62]/20"
-                value={form.correo}
-                onChange={e => setForm({ ...form, correo: e.target.value })}
-              />
-            </div>
 
             <div className="space-y-3 border-t border-slate-200 pt-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-slate-900">Horarios</p>
+                <p className="text-sm font-bold text-slate-900">Horarios Disponibles</p>
                 <button type="button" onClick={addSchedule} className="inline-flex items-center gap-2 rounded-md bg-[#e0eee8] px-3 py-2 text-xs font-bold text-[#12312b]">
-                  <Plus size={14} />
-                  Agregar
+                  <Plus size={14} /> Agregar
                 </button>
               </div>
 
               {form.horarios.map((horario, index) => (
                 <div key={index} className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                  <div className="grid gap-3 sm:grid-cols-[1fr_96px_96px_36px]">
+                  <div className="grid gap-3 sm:grid-cols-[1fr_90px_90px_36px]">
                     <select
-                      className="rounded-md border border-slate-300 p-2 text-sm"
+                      className="rounded-md border border-slate-300 p-2 text-sm outline-none"
                       value={horario.diaSemana}
                       onChange={e => updateSchedule(index, { diaSemana: e.target.value })}
                     >
-                      {dias.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      {dias.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
-                    <input
-                      type="time"
-                      className="rounded-md border border-slate-300 p-2 text-sm"
-                      value={horario.horaInicio}
-                      onChange={e => updateSchedule(index, { horaInicio: e.target.value })}
-                    />
-                    <input
-                      type="time"
-                      className="rounded-md border border-slate-300 p-2 text-sm"
-                      value={horario.horaFin}
-                      onChange={e => updateSchedule(index, { horaFin: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeSchedule(index)}
-                      disabled={form.horarios.length === 1}
-                      className="grid h-10 place-items-center rounded-md text-slate-500 hover:bg-white disabled:opacity-40"
-                      title="Eliminar horario"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <input type="time" className="p-2 rounded border border-slate-300 text-sm" value={horario.horaInicio} onChange={e => updateSchedule(index, { horaInicio: e.target.value })} />
+                    <input type="time" className="p-2 rounded border border-slate-300 text-sm" value={horario.horaFin} onChange={e => updateSchedule(index, { horaFin: e.target.value })} />
+                    <button type="button" onClick={() => removeSchedule(index)} disabled={form.horarios.length === 1} className="text-slate-400 hover:text-red-500 disabled:opacity-20"><Trash2 size={18} /></button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <button
-              type="submit"
-              disabled={loading || especialidades.length === 0}
-              className="w-full rounded-md bg-[#12312b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1b493f] disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : 'Registrar doctor'}
+            <button type="submit" disabled={loading} className="w-full rounded-md bg-[#12312b] px-6 py-3 text-sm font-bold text-white hover:bg-[#1b493f] transition disabled:opacity-50">
+              {loading ? 'Guardando...' : 'Registrar Especialista'}
             </button>
-
-            {message && (
-              <div className={`rounded-md p-3 text-sm ${
-                message.type === 'success' ? 'bg-green-50 text-green-800 ring-1 ring-green-200' : 'bg-red-50 text-red-800 ring-1 ring-red-200'
-              }`}>
-                {message.text}
-              </div>
-            )}
           </form>
         </section>
 
         <section className="space-y-4">
-          <h3 className="text-lg font-bold text-slate-950">Doctores registrados</h3>
+          <h3 className="text-lg font-bold text-slate-950">Listado de Personal</h3>
           <div className="grid gap-4">
             {doctores.map(doctor => (
-              <article key={doctor.id} className={`rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 ${!doctor.activo ? 'opacity-60 grayscale' : ''}`}>
+              <article key={doctor.id} className={`rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 transition-all ${!doctor.activo ? 'opacity-60 grayscale' : ''}`}>
                 <div className="flex flex-col justify-between gap-3 sm:flex-row">
                   <div>
                     <div className="flex items-center gap-2">
@@ -303,15 +248,15 @@ export default function Doctores() {
                         {doctor.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </div>
-                    <p className="text-sm text-[#2f6f62]">
-                      {doctor.specialtyName} · Q {Number(doctor.consultationPrice || 0).toFixed(2)} · {doctor.maxAppointmentsPerDay} citas/dia
+                    <p className="text-sm font-medium text-[#2f6f62]">
+                      {doctor.specialtyName} · Q {Number(doctor.consultationPrice || 0).toFixed(2)} · {doctor.maxAppointmentsPerDay} citas/día
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <p className="font-mono text-xs text-slate-400">ID {doctor.id}</p>
+                    <p className="font-mono text-[10px] text-slate-400">ID: {doctor.id}</p>
                     <button 
                       onClick={() => openConfirmModal(doctor)}
-                      className={`text-xs px-3 py-1 rounded border transition ${doctor.activo ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'}`}
+                      className={`text-xs px-4 py-1.5 rounded-md font-bold transition border ${doctor.activo ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'}`}
                     >
                       {doctor.activo ? 'Desactivar' : 'Activar'}
                     </button>
@@ -319,61 +264,52 @@ export default function Doctores() {
                 </div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   {doctor.horarios?.map(horario => (
-                    <div key={horario.id} className="flex items-center gap-3 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                      <Calendar size={16} className="text-[#2f6f62]" />
-                      <span>{dias.find(([value]) => value === horario.diaSemana)?.[1] || horario.diaSemana}</span>
-                      <Clock size={16} className="ml-auto text-slate-400" />
+                    <div key={horario.id} className="flex items-center gap-3 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                      <Calendar size={14} className="text-[#2f6f62]" />
+                      <span className="font-bold">{dias.find(([v]) => v === horario.diaSemana)?.[1]}</span>
+                      <Clock size={14} className="ml-auto text-slate-400" />
                       <span>{horario.horaInicio} - {horario.horaFin}</span>
                     </div>
                   ))}
                 </div>
               </article>
             ))}
-
-            {doctores.length === 0 && !loading && (
-              <div className="rounded-md border-2 border-dashed border-slate-300 bg-white py-14 text-center text-slate-500">
-                No hay doctores registrados.
-              </div>
-            )}
           </div>
         </section>
       </div>
 
-      {/* Modal de Confirmacion */}
+      {/* Confirmation Modal */}
       {confirmModal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl ring-1 ring-slate-200">
-            <h3 className="text-lg font-bold text-slate-950">Confirmar acción</h3>
-            <p className="mt-2 text-slate-600">
-              ¿Está seguro de que desea <strong>{confirmModal.action}</strong> al doctor <strong>{confirmModal.nombre}</strong>?
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl ring-1 ring-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 mb-4">
+              <AlertCircle size={28} />
+            </div>
+            <h3 className="text-xl font-black text-slate-950">¿Confirmar acción?</h3>
+            <p className="mt-3 text-slate-600 leading-relaxed">
+              Está a punto de <strong>{confirmModal.action}</strong> al doctor <strong>{confirmModal.nombre}</strong>. 
+              {confirmModal.action === 'desactivar' && ' El especialista no podrá recibir nuevas citas hasta ser reactivado.'}
             </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button 
-                onClick={() => setConfirmModal({ show: false, doctorId: null, nombre: '' })}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleToggleStatus}
-                className={`rounded-md px-4 py-2 text-sm font-semibold text-white ${confirmModal.action === 'desactivar' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-              >
-                Confirmar
+            <div className="mt-8 flex justify-end gap-3">
+              <button onClick={() => setConfirmModal({ show: false, doctorId: null, nombre: '', action: '' })} className="rounded-lg px-5 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-100 transition">Cancelar</button>
+              <button onClick={handleToggleStatus} className={`rounded-lg px-6 py-2.5 text-sm font-bold text-white shadow-md transition ${confirmModal.action === 'desactivar' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}>
+                Sí, {confirmModal.action}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Alerta profesional flotante */}
+      {/* Custom Floating Alerts */}
       {message && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4">
-          <div className={`flex items-center gap-3 rounded-lg p-4 shadow-lg ring-1 ${
-            message.type === 'success' ? 'bg-green-600 text-white ring-green-500' : 'bg-red-600 text-white ring-red-500'
-          }`}>
-            {message.type === 'success' ? <UserPlus size={20} /> : <X size={20} />}
-            <p className="text-sm font-bold">{message.text}</p>
-            <button onClick={() => setMessage(null)} className="ml-2 hover:opacity-70"><X size={16} /></button>
+        <div className="fixed bottom-8 right-8 z-[110] animate-in slide-in-from-right-8 duration-300">
+          <div className={`flex items-center gap-4 rounded-xl p-5 shadow-2xl ring-1 ${message.type === 'success' ? 'bg-[#12312b] text-white ring-white/10' : 'bg-red-600 text-white ring-white/10'}`}>
+            {message.type === 'success' ? <CheckCircle2 size={24} className="text-green-400" /> : <AlertCircle size={24} />}
+            <div>
+              <p className="text-xs font-black uppercase opacity-60">Notificación</p>
+              <p className="text-sm font-bold">{message.text}</p>
+            </div>
+            <button onClick={() => setMessage(null)} className="ml-4 rounded-full p-1 hover:bg-white/10 transition"><X size={16} /></button>
           </div>
         </div>
       )}
