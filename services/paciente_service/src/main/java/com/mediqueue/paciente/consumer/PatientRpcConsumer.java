@@ -25,12 +25,18 @@ public class PatientRpcConsumer {
         logger.info("Recibida peticion RPC de validacion de paciente. patientId={}", request.patientId());
         try {
             UUID id = UUID.fromString(request.patientId().trim());
-            boolean exists = repository.existsById(id);
-            logger.info("Resultado de validacion para patientId={}: {}", id, exists);
-            return new PatientValidationResponse(exists);
+            return repository.findById(id)
+                    .map(p -> {
+                        logger.info("Resultado de validacion para patientId={}: true", id);
+                        return new PatientValidationResponse(true, p.getNombre());
+                    })
+                    .orElseGet(() -> {
+                        logger.info("Resultado de validacion para patientId={}: false", id);
+                        return new PatientValidationResponse(false, null);
+                    });
         } catch (IllegalArgumentException e) {
             logger.error("Formato de patientId invalido: {}", request.patientId());
-            return new PatientValidationResponse(false);
+            return new PatientValidationResponse(false, null);
         }
     }
 }

@@ -45,8 +45,14 @@ public class Appointment {
     @Column(name = "patient_id", nullable = false, length = 80)
     private String patientId;
 
+    @Column(name = "patient_name", length = 120)
+    private String patientName;
+
     @Column(name = "doctor_id", nullable = false, length = 80)
     private String doctorId;
+
+    @Column(name = "doctor_name", length = 120)
+    private String doctorName;
 
     @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;

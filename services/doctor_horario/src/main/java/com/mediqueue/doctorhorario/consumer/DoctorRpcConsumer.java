@@ -43,12 +43,13 @@ public class DoctorRpcConsumer {
             return doctorRepository.findById(doctorId)
                     .map(doctor -> new DoctorValidationResponse(
                             hasAvailableSchedule && doctor.isActivo(),
-                            doctor.getSpecialty().getConsultationPrice()
+                            doctor.getSpecialty().getConsultationPrice(),
+                            doctor.getNombre()
                     ))
-                    .orElseGet(() -> new DoctorValidationResponse(false, null));
+                    .orElseGet(() -> new DoctorValidationResponse(false, null, null));
         } catch (IllegalArgumentException e) {
             logger.error("Formato de doctorId invalido: {}", request.doctorId());
-            return new DoctorValidationResponse(false, null);
+            return new DoctorValidationResponse(false, null, null);
         }
     }
 

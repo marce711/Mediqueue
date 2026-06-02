@@ -13,6 +13,7 @@ export default function Pagos() {
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
+    fetchTodosLosPagos();
     const appointmentFromQuery = searchParams.get('appointmentId');
     const amountFromQuery = searchParams.get('amount');
     if (appointmentFromQuery) {
@@ -24,30 +25,43 @@ export default function Pagos() {
     }
   }, [searchParams]);
 
+  const fetchTodosLosPagos = async () => {
+    try {
+      setLoading(true);
+      const res = await pagoService.listar();
+      setPagos(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Error al listar pagos:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [citaDetalle, setCitaDetalle] = useState(null);
+
   const handleSearch = async () => {
-    if (!appointmentId.trim()) return;
+    if (!appointmentId.trim()) {
+      fetchTodosLosPagos();
+      setCitaDetalle(null);
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
       setMessage(null);
-      const res = await pagoService.obtenerPorCita(appointmentId.trim());
-      setPagos(Array.isArray(res.data) ? res.data : [res.data]);
+      setCitaDetalle(null);
+      
+      const resCita = await citaService.obtener(appointmentId.trim());
+      setCitaDetalle(resCita.data);
+      setAmount(String(resCita.data.consultationPrice));
+      
+      const resPagos = await pagoService.obtenerPorCita(appointmentId.trim());
+      setPagos(Array.isArray(resPagos.data) ? resPagos.data : [resPagos.data]);
     } catch (err) {
       console.error(err);
       setPagos([]);
-      try {
-        const cita = await citaService.obtener(appointmentId.trim());
-        if (cita.data?.consultationPrice) {
-          setAmount(String(cita.data.consultationPrice));
-          setMessage({ type: 'success', text: 'Cita encontrada. El monto fue cargado automaticamente.' });
-          setError(null);
-          return;
-        }
-      } catch (lookupError) {
-        console.error(lookupError);
-      }
-      setError('No se encontraron pagos para esta cita.');
+      setError('Cita no encontrada o sin pagos registrados.');
     } finally {
       setLoading(false);
     }
@@ -66,9 +80,9 @@ export default function Pagos() {
         appointmentId: normalizedAppointmentId,
         amount: Number(amount),
       }, `pago-${normalizedAppointmentId}`);
-      setPagos([res.data]);
-      setMessage({ type: 'success', text: 'Pago registrado. La cita fue confirmada.' });
+      setMessage({ type: 'success', text: 'Pago registrado con exito. La cita ha sido confirmada.' });
       setAmount('');
+      fetchTodosLosPagos();
     } catch (err) {
       console.error(err);
       const detail = err.response?.data?.message || err.response?.data?.error;
@@ -114,6 +128,30 @@ export default function Pagos() {
               </button>
             </div>
             {error && <p className="text-sm text-red-700">{error}</p>}
+            
+            {citaDetalle && (
+              <div className="mt-4 rounded-md bg-slate-50 p-4 ring-1 ring-slate-200">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Detalles de la cita</p>
+                <div className="mt-2 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Paciente:</span>
+                    <span className="font-semibold text-slate-900">{citaDetalle.patientName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Especialista:</span>
+                    <span className="font-semibold text-slate-900">{citaDetalle.doctorName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Fecha:</span>
+                    <span className="text-slate-900">{new Date(citaDetalle.appointmentDate).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-2 font-bold">
+                    <span className="text-slate-900">Monto a pagar:</span>
+                    <span className="text-[#2f6f62]">Q {Number(citaDetalle.consultationPrice).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 

@@ -9,7 +9,9 @@ import java.util.UUID;
 public record AppointmentResponse(
         UUID id,
         String patientId,
+        String patientName,
         String doctorId,
+        String doctorName,
         LocalDateTime appointmentDate,
         Integer durationMinutes,
         BigDecimal consultationPrice,

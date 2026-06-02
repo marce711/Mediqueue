@@ -50,9 +50,20 @@ export default function Doctores() {
       setEspecialidadesError(null);
       const res = await doctorService.listarEspecialidades();
       const data = Array.isArray(res.data) ? res.data : [];
-      setEspecialidades(data);
-      if (data.length > 0 && !form.specialtyId) {
-        setForm(prev => ({ ...prev, specialtyId: data[0].id }));
+      
+      // Deduplicar especialidades por nombre
+      const uniqueSpecs = [];
+      const seen = new Set();
+      data.forEach(esp => {
+        if (!seen.has(esp.name.toLowerCase().trim())) {
+          seen.add(esp.name.toLowerCase().trim());
+          uniqueSpecs.push(esp);
+        }
+      });
+
+      setEspecialidades(uniqueSpecs);
+      if (uniqueSpecs.length > 0 && !form.specialtyId) {
+        setForm(prev => ({ ...prev, specialtyId: uniqueSpecs[0].id }));
       }
     } catch (err) {
       console.error('Error fetching specialties:', err);

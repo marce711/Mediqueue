@@ -78,7 +78,7 @@ public class AppointmentService {
 
         int durationMinutes = normalizeDuration(request.durationMinutes());
         validateFutureDate(request.appointmentDate());
-        validatePatientExists(request.patientId());
+        PatientValidationResponse patientValidation = validatePatientExists(request.patientId());
         DoctorValidationResponse doctorValidation = validateDoctorHasAvailableSchedule(
                 request.doctorId(),
                 request.appointmentDate(),
@@ -89,7 +89,9 @@ public class AppointmentService {
 
         Appointment appointment = Appointment.builder()
                 .patientId(request.patientId().trim())
+                .patientName(patientValidation.name())
                 .doctorId(request.doctorId().trim())
+                .doctorName(doctorValidation.name())
                 .appointmentDate(request.appointmentDate())
                 .durationMinutes(durationMinutes)
                 .consultationPrice(consultationPrice)
@@ -203,7 +205,7 @@ public class AppointmentService {
         }
     }
 
-    private void validatePatientExists(String patientId) {
+    private PatientValidationResponse validatePatientExists(String patientId) {
         PatientValidationRequest request = new PatientValidationRequest(patientId);
         PatientValidationResponse response = (PatientValidationResponse) rabbitTemplate.convertSendAndReceive(
                 rpcExchange,
@@ -213,6 +215,7 @@ public class AppointmentService {
         if (response == null || !response.exists()) {
             throw new InvalidAppointmentException("Patient does not exist: " + patientId);
         }
+        return response;
     }
 
     private DoctorValidationResponse validateDoctorHasAvailableSchedule(String doctorId, LocalDateTime appointmentDate, int durationMinutes) {
@@ -287,7 +290,9 @@ public class AppointmentService {
         return new AppointmentResponse(
                 appointment.getId(),
                 appointment.getPatientId(),
+                appointment.getPatientName(),
                 appointment.getDoctorId(),
+                appointment.getDoctorName(),
                 appointment.getAppointmentDate(),
                 appointment.getDurationMinutes(),
                 appointment.getConsultationPrice(),

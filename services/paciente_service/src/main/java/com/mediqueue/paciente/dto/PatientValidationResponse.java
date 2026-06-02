@@ -1,3 +1,3 @@
 package com.mediqueue.paciente.dto;
 
-public record PatientValidationResponse(boolean exists) {}
+public record PatientValidationResponse(boolean exists, String name) {}

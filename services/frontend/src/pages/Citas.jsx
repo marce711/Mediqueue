@@ -283,10 +283,39 @@ export default function Citas() {
                       </div>
                       <div className="text-xs text-gray-400 font-mono mt-1">
                         Ref: {cita.id?.substring(0,8)} · {cita.durationMinutes || 30} min · Q {Number(cita.consultationPrice || 0).toFixed(2)}
+                        <button 
+                          onClick={() => {navigator.clipboard.writeText(cita.id); alert('ID de cita copiado');}}
+                          className="ml-2 text-blue-400 hover:text-blue-600"
+                          title="Copiar ID de cita"
+                        >
+                          Copiar ID
+                        </button>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-700 font-medium">ID: {cita.patientId?.substring(0,8)}...</td>
-                    <td className="px-6 py-4 text-gray-700">ID: {cita.doctorId?.substring(0,8)}...</td>
+                    <td className="px-6 py-4">
+                      <div className="text-gray-700 font-medium">{cita.patientName || 'Cargando...'}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-gray-400 font-mono">ID: {cita.patientId?.substring(0,8)}...</span>
+                        <button 
+                          onClick={() => {navigator.clipboard.writeText(cita.patientId); alert('ID de paciente copiado');}}
+                          className="text-[10px] text-blue-400 hover:underline"
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">
+                      <div className="text-gray-700 font-medium">{cita.doctorName || 'Cargando...'}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-gray-400 font-mono">ID: {cita.doctorId?.substring(0,8)}...</span>
+                        <button 
+                          onClick={() => {navigator.clipboard.writeText(cita.doctorId); alert('ID de doctor copiado');}}
+                          className="text-[10px] text-blue-400 hover:underline"
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
                         cita.status === 'CONFIRMED' ? 'bg-green-100 text-green-800 border-green-200' : 
