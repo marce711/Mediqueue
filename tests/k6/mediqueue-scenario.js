@@ -35,6 +35,17 @@ const readEndpoints = [
 export function makeOptions(totalRequests, defaultVus, profileName) {
   const requests = integerEnv('TARGET_REQUESTS', totalRequests);
   const vus = integerEnv('VUS', defaultVus);
+  const thresholds = {
+    http_req_failed: [__ENV.HTTP_REQ_FAILED_THRESHOLD || 'rate<0.10'],
+    mediqueue_successful_responses: [__ENV.SUCCESS_RATE_THRESHOLD || 'rate>0.90'],
+  };
+
+  if ((__ENV.DISABLE_LATENCY_THRESHOLDS || '').toLowerCase() !== 'true') {
+    thresholds.http_req_duration = [
+      `p(95)<${integerEnv('P95_THRESHOLD_MS', 3000)}`,
+      `p(99)<${integerEnv('P99_THRESHOLD_MS', 6000)}`,
+    ];
+  }
 
   return {
     scenarios: {
@@ -45,11 +56,8 @@ export function makeOptions(totalRequests, defaultVus, profileName) {
         maxDuration: __ENV.MAX_DURATION || '20m',
       },
     },
-    thresholds: {
-      http_req_failed: ['rate<0.10'],
-      http_req_duration: ['p(95)<3000', 'p(99)<6000'],
-      mediqueue_successful_responses: ['rate>0.90'],
-    },
+    thresholds,
+    summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
     tags: {
       app: 'mediqueue',
       profile: __ENV.PROFILE || profileName,
