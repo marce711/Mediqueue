@@ -13,7 +13,7 @@ services:
       - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
       - ETCD_ADVERTISE_CLIENT_URLS=http://100.76.170.62:2379
       - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster-mediqueue
-      - ETCD_INITIAL_CLUSTER=node1=http://100.76.170.62:2380,node2=http://100.115.210.113:2380,node3=http://100.99.158.111:2380
+      - ETCD_INITIAL_CLUSTER=node1=http://100.76.170.62:2380,node2=http://100.113.35.88:2380,node3=http://100.99.158.111:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
     volumes:
       - etcd_data:/bitnami/etcd
@@ -30,7 +30,7 @@ services:
       - POSTGRES_PASSWORD=mediqueue123
       - POSTGRES_APP_PASSWORD=mediqueue123
       - REPLICATION_PASSWORD=replicator123
-      - PATRONI_ETCD_HOSTS=100.76.170.62:2379,100.115.210.113:2379,100.99.158.111:2379
+      - PATRONI_ETCD_HOSTS=100.76.170.62:2379,100.113.35.88:2379,100.99.158.111:2379
       - PATRONI_SCOPE=mediqueue-cluster
       - PATRONI_NAME=postgres1
     volumes:
@@ -93,17 +93,17 @@ services:
   api-gateway:
     build: ./services/apigateway
     environment:
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.111:5672
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.113.35.88:5672,100.99.158.111:5672
       - PACIENTE_SERVICE_URL=http://paciente-service:8083
       - CITA_SERVICE_URL=http://cita-service:8081
       - DOCTOR_SERVICE_URL=http://doctor-horario:8082
       - PAGO_SERVICE_URL=http://pago-service:8084
       - NOTIFICACION_SERVICE_URL=http://notificacion-service:8085
-      - PACIENTE_SERVICE_URLS=http://paciente-service:8083,http://100.76.170.62:8083,http://100.115.210.113:8083,http://100.99.158.111:8083
-      - CITA_SERVICE_URLS=http://cita-service:8081,http://100.115.210.113:8081,http://100.76.170.62:8081,http://100.99.158.111:8081
-      - DOCTOR_SERVICE_URLS=http://doctor-horario:8082,http://100.76.170.62:8082,http://100.115.210.113:8082,http://100.99.158.111:8082
-      - PAGO_SERVICE_URLS=http://pago-service:8084,http://100.99.158.111:8084,http://100.115.210.113:8084,http://100.76.170.62:8084
-      - NOTIFICACION_SERVICE_URLS=http://notificacion-service:8085,http://100.99.158.111:8085,http://100.115.210.113:8085,http://100.76.170.62:8085
+      - PACIENTE_SERVICE_URLS=http://paciente-service:8083,http://100.76.170.62:8083,http://100.113.35.88:8083,http://100.99.158.111:8083
+      - CITA_SERVICE_URLS=http://cita-service:8081,http://100.113.35.88:8081,http://100.76.170.62:8081,http://100.99.158.111:8081
+      - DOCTOR_SERVICE_URLS=http://doctor-horario:8082,http://100.76.170.62:8082,http://100.113.35.88:8082,http://100.99.158.111:8082
+      - PAGO_SERVICE_URLS=http://pago-service:8084,http://100.99.158.111:8084,http://100.113.35.88:8084,http://100.76.170.62:8084
+      - NOTIFICACION_SERVICE_URLS=http://notificacion-service:8085,http://100.99.158.111:8085,http://100.113.35.88:8085,http://100.76.170.62:8085
     ports:
       - "8080:8080"
     depends_on:
@@ -118,7 +118,7 @@ services:
     build: ./services/paciente_service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.115.210.113:5672,100.99.158.111:5672
+      - SPRING_RABBITMQ_ADDRESSES=100.76.170.62:5672,100.113.35.88:5672,100.99.158.111:5672
     ports:
       - "8083:8083"
     depends_on:
@@ -130,9 +130,9 @@ services:
     build: ./services/cita_service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.115.210.113:5672,100.99.158.111:5672
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.113.35.88:5672,100.99.158.111:5672
       - SPRING_DATA_REDIS_SENTINEL_MASTER=mymaster
-      - SPRING_DATA_REDIS_SENTINEL_NODES=redis-sentinel:26379,100.115.210.113:26379,100.99.158.111:26379
+      - SPRING_DATA_REDIS_SENTINEL_NODES=redis-sentinel:26379,100.113.35.88:26379,100.99.158.111:26379
       - PATIENT_SERVICE_URL=http://paciente-service:8083
       - DOCTOR_SERVICE_URL=http://doctor-horario:8082
     ports:
@@ -147,7 +147,7 @@ services:
     build: ./services/doctor_horario
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.115.210.113:5672,100.99.158.111:5672
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.113.35.88:5672,100.99.158.111:5672
     ports:
       - "8082:8082"
     depends_on:
@@ -159,7 +159,7 @@ services:
     build: ./services/pago_service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
-      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.115.210.113:5672,100.99.158.111:5672
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.113.35.88:5672,100.99.158.111:5672
       - APP_APPOINTMENT_SERVICE_URL=http://cita-service:8081
     ports:
       - "8084:8084"
@@ -172,7 +172,7 @@ services:
   notificacion-service:
     build: ./services/notificacion_service
     environment:
-      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.115.210.113:5672,100.99.158.111:5672
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.113.35.88:5672,100.99.158.111:5672
     ports:
       - "8085:8085"
     depends_on:
@@ -229,3 +229,4 @@ volumes:
   prometheus_data:
   grafana_data:
   pgadmin_data:
+

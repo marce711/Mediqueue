@@ -6,7 +6,7 @@ Esta arquitectura está diseñada para sobrevivir a la caída de una computadora
 Asegurarse de que las 3 computadoras tengan Tailscale instalado y se vean entre sí.
 En este ejemplo usamos las siguientes IPs (DEBES REEMPLAZARLAS EN LOS ARCHIVOS .yml):
 - **Nodo 1 (Computadora A):** 100.76.170.62
-- **Nodo 2 (Computadora B):** 100.115.210.113
+- **Nodo 2 (Computadora B):** 100.113.35.88
 - **Nodo 3 (Computadora C):** 100.99.158.111
 
 ## 2. Archivos de Despliegue
@@ -35,7 +35,7 @@ pgAdmin. Esto permite entrar por cualquier nodo disponible.
 
 URLs principales:
 - Frontend nodo A: `http://100.76.170.62/`
-- Frontend nodo B: `http://100.115.210.113/`
+- Frontend nodo B: `http://100.113.35.88/`
 - Frontend nodo C: `http://100.99.158.111/`
 - Gateway de cada nodo: `http://<IP_NODO>:8080`
 - Estado Patroni: `http://<IP_NODO>:8008/cluster`
@@ -43,7 +43,7 @@ URLs principales:
 - pgAdmin: `http://<IP_NODO>:5050`
 
 ## 4. Pruebas de Resiliencia (Demo)
-- **Cierre de una PC:** Apaga la Computadora A. Entra por `http://100.115.210.113/` o `http://100.99.158.111/`. El gateway de esos nodos tiene listas de fallback hacia los servicios locales y remotos, y la base escribe por HAProxy al líder Patroni disponible.
+- **Cierre de una PC:** Apaga la Computadora A. Entra por `http://100.113.35.88/` o `http://100.99.158.111/`. El gateway de esos nodos tiene listas de fallback hacia los servicios locales y remotos, y la base escribe por HAProxy al líder Patroni disponible.
 - **Matar Postgres Master:** Patroni promoverá una réplica en < 10 segundos. HAProxy detectará el cambio automáticamente.
 - **Corte de RabbitMQ:** Spring Boot tiene configuradas las 3 IPs, por lo que se reconectará al siguiente nodo disponible.
 
@@ -64,7 +64,7 @@ Al agregar el servidor dentro de pgAdmin:
 - Password: `mediqueue123`
 
 Si usa un pgAdmin externo al compose, use como host la IP Tailscale de
-cualquier nodo y el puerto `5000`, por ejemplo `100.115.210.113:5000`.
+cualquier nodo y el puerto `5000`, por ejemplo `100.113.35.88:5000`.
 
 ## 6. Reglas de Negocio Implementadas
 - Pacientes: el DPI es único; un segundo registro con el mismo DPI devuelve conflicto.
@@ -79,3 +79,4 @@ cualquier nodo y el puerto `5000`, por ejemplo `100.115.210.113:5000`.
 - **Quorum Queues:** Las colas de RabbitMQ deben definirse como tipo 'quorum' en el código Java para que se repliquen.
 - **Resilience4j:** Los microservicios ahora tienen Circuit Breakers para evitar que fallos en cascada tumben el sistema.
 - **HAProxy Local:** Cada nodo tiene su HAProxy local apuntando a los 3 nodos de DB. Los microservicios se conectan a `haproxy:5432` dentro de Docker; desde el host use `localhost:5000` para escritura.
+

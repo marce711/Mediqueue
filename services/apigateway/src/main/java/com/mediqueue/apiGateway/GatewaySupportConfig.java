@@ -72,8 +72,8 @@ class ApiProxyController {
     ApiProxyController(
             RestTemplate restTemplate,
             @Value("${PACIENTE_SERVICE_URLS:${PACIENTE_SERVICE_URL:http://100.76.170.62:8083}}") String pacienteServiceUrls,
-            @Value("${CITA_SERVICE_URLS:${CITA_SERVICE_URL:http://100.115.210.113:8081}}") String citaServiceUrls,
-            @Value("${DOCTOR_SERVICE_URLS:${DOCTOR_SERVICE_URL:http://100.115.210.113:8082}}") String doctorServiceUrls,
+            @Value("${CITA_SERVICE_URLS:${CITA_SERVICE_URL:http://100.113.35.88:8081}}") String citaServiceUrls,
+            @Value("${DOCTOR_SERVICE_URLS:${DOCTOR_SERVICE_URL:http://100.113.35.88:8082}}") String doctorServiceUrls,
             @Value("${PAGO_SERVICE_URLS:${PAGO_SERVICE_URL:http://100.99.158.111:8084}}") String pagoServiceUrls,
             @Value("${NOTIFICACION_SERVICE_URLS:${NOTIFICACION_SERVICE_URL:http://100.99.158.111:8085}}") String notificacionServiceUrls
     ) {
@@ -228,3 +228,4 @@ class FallbackController {
                 .body(Map.of("error", message));
     }
 }
+
