@@ -63,9 +63,10 @@ public class AppointmentController {
             @RequestParam
             @NotNull(message = "appointmentDate is required")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime appointmentDate
+            LocalDateTime appointmentDate,
+            @RequestParam(required = false, defaultValue = "30") Integer durationMinutes
     ) {
-        return ResponseEntity.ok(appointmentService.checkAvailability(doctorId, appointmentDate));
+        return ResponseEntity.ok(appointmentService.checkAvailability(doctorId, appointmentDate, durationMinutes));
     }
 
     @PatchMapping("/{id}/status")

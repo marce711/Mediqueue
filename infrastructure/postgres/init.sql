@@ -23,17 +23,24 @@ CREATE TABLE IF NOT EXISTS especialidades (
     id_especialidad UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nombre VARCHAR(100) NOT NULL UNIQUE,
     descripcion VARCHAR(255),
+    precio_consulta NUMERIC(12,2) NOT NULL DEFAULT 150.00,
     activa BOOLEAN NOT NULL DEFAULT TRUE,
     creado_en TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO especialidades (nombre, descripcion) VALUES
-('Medicina General', 'Atención médica primaria y preventiva'),
-('Pediatría', 'Cuidado médico de bebés, niños y adolescentes'),
-('Ginecología', 'Salud del sistema reproductor femenino'),
-('Cardiología', 'Tratamiento de trastornos del corazón'),
-('Dermatología', 'Cuidado de la piel, cabello y uñas')
-ON CONFLICT (nombre) DO NOTHING;
+ALTER TABLE especialidades
+ADD COLUMN IF NOT EXISTS precio_consulta NUMERIC(12,2) NOT NULL DEFAULT 150.00;
+
+INSERT INTO especialidades (nombre, descripcion, precio_consulta) VALUES
+('Medicina General', 'Atención médica primaria y preventiva', 150.00),
+('Pediatría', 'Cuidado médico de bebés, niños y adolescentes', 180.00),
+('Ginecología', 'Salud del sistema reproductor femenino', 220.00),
+('Cardiología', 'Tratamiento de trastornos del corazón', 300.00),
+('Dermatología', 'Cuidado de la piel, cabello y uñas', 200.00)
+ON CONFLICT (nombre) DO UPDATE SET
+    descripcion = EXCLUDED.descripcion,
+    precio_consulta = EXCLUDED.precio_consulta,
+    activa = TRUE;
 
 CREATE TABLE IF NOT EXISTS doctores (
     id_doctor UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -66,6 +73,8 @@ CREATE TABLE IF NOT EXISTS citas (
     doctor_id UUID NOT NULL,
     horario_id UUID NOT NULL,
     estado_cita VARCHAR(30) NOT NULL DEFAULT 'CONFIRMADA',
+    duracion_minutos INT NOT NULL DEFAULT 30,
+    precio_consulta NUMERIC(12,2) NOT NULL DEFAULT 0.00,
     numero_turno INT,
     motivo_consulta VARCHAR(255),
     observaciones VARCHAR(255),
@@ -75,8 +84,27 @@ CREATE TABLE IF NOT EXISTS citas (
     CONSTRAINT fk_cita_paciente FOREIGN KEY (paciente_id) REFERENCES pacientes(id_paciente),
     CONSTRAINT fk_cita_doctor FOREIGN KEY (doctor_id) REFERENCES doctores(id_doctor),
     CONSTRAINT fk_cita_horario FOREIGN KEY (horario_id) REFERENCES horarios(id_horario),
-    CONSTRAINT chk_cita_estado CHECK (estado_cita IN ('CONFIRMADA', 'CANCELADA', 'PENDIENTE', 'FINALIZADA'))
+    CONSTRAINT chk_cita_estado CHECK (estado_cita IN ('CONFIRMADA', 'CANCELADA', 'PENDIENTE', 'FINALIZADA')),
+    CONSTRAINT chk_citas_duracion_minutos CHECK (duracion_minutos BETWEEN 20 AND 30)
 );
+
+ALTER TABLE citas
+ADD COLUMN IF NOT EXISTS duracion_minutos INT NOT NULL DEFAULT 30;
+
+ALTER TABLE citas
+ADD COLUMN IF NOT EXISTS precio_consulta NUMERIC(12,2) NOT NULL DEFAULT 0.00;
+
+DO
+$$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'chk_citas_duracion_minutos'
+    ) THEN
+        ALTER TABLE citas
+        ADD CONSTRAINT chk_citas_duracion_minutos CHECK (duracion_minutos BETWEEN 20 AND 30);
+    END IF;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS pagos (
     id_pago UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -126,12 +154,33 @@ CREATE TABLE IF NOT EXISTS appointments (
     patient_id VARCHAR(80) NOT NULL,
     doctor_id VARCHAR(80) NOT NULL,
     appointment_date TIMESTAMP NOT NULL,
+    duration_minutes INT NOT NULL DEFAULT 30,
+    consultation_price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     idempotency_key VARCHAR(120),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    version BIGINT
+    version BIGINT,
+    CONSTRAINT chk_appointments_duration_minutes CHECK (duration_minutes BETWEEN 20 AND 30)
 );
+
+ALTER TABLE appointments
+ADD COLUMN IF NOT EXISTS duration_minutes INT NOT NULL DEFAULT 30;
+
+ALTER TABLE appointments
+ADD COLUMN IF NOT EXISTS consultation_price NUMERIC(12,2) NOT NULL DEFAULT 0.00;
+
+DO
+$$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'chk_appointments_duration_minutes'
+    ) THEN
+        ALTER TABLE appointments
+        ADD CONSTRAINT chk_appointments_duration_minutes CHECK (duration_minutes BETWEEN 20 AND 30);
+    END IF;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS payments (
     id BIGSERIAL PRIMARY KEY,

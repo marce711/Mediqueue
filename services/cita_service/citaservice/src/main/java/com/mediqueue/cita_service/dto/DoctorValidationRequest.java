@@ -1,3 +1,9 @@
 package com.mediqueue.cita_service.dto;
 
-public record DoctorValidationRequest(String doctorId) {}
+import java.time.LocalDateTime;
+
+public record DoctorValidationRequest(
+        String doctorId,
+        LocalDateTime appointmentDate,
+        Integer durationMinutes
+) {}

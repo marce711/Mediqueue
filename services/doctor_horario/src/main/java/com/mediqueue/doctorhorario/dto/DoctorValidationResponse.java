@@ -1,3 +1,9 @@
 package com.mediqueue.doctorhorario.dto;
 
-public record DoctorValidationResponse(boolean hasAvailableSchedule) {}
+import java.math.BigDecimal;
+
+public record DoctorValidationResponse(
+        boolean hasAvailableSchedule,
+        BigDecimal consultationPrice
+) {
+}

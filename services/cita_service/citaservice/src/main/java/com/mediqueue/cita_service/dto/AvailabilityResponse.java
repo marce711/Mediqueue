@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public record AvailabilityResponse(
         String doctorId,
         LocalDateTime appointmentDate,
+        Integer durationMinutes,
         boolean available
 ) {
 }

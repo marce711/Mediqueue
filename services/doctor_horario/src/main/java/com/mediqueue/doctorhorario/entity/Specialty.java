@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -25,6 +26,9 @@ public class Specialty {
 
     @Column(nullable = false)
     private boolean activa = true;
+
+    @Column(name = "precio_consulta", nullable = false, precision = 12, scale = 2)
+    private BigDecimal consultationPrice = BigDecimal.valueOf(150);
 
     public UUID getId() {
         return id;
@@ -56,5 +60,13 @@ public class Specialty {
 
     public void setActiva(boolean activa) {
         this.activa = activa;
+    }
+
+    public BigDecimal getConsultationPrice() {
+        return consultationPrice;
+    }
+
+    public void setConsultationPrice(BigDecimal consultationPrice) {
+        this.consultationPrice = consultationPrice;
     }
 }

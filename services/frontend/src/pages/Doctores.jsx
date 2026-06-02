@@ -19,6 +19,7 @@ export default function Doctores() {
   const [especialidades, setEspecialidades] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [especialidadesError, setEspecialidadesError] = useState(null);
   const [form, setForm] = useState({
     nombre: '',
     specialtyId: '',
@@ -46,13 +47,18 @@ export default function Doctores() {
 
   const fetchEspecialidades = async () => {
     try {
+      setEspecialidadesError(null);
       const res = await doctorService.listarEspecialidades();
-      setEspecialidades(res.data);
-      if (res.data.length > 0 && !form.specialtyId) {
-        setForm(prev => ({ ...prev, specialtyId: res.data[0].id }));
+      const data = Array.isArray(res.data) ? res.data : [];
+      setEspecialidades(data);
+      if (data.length > 0 && !form.specialtyId) {
+        setForm(prev => ({ ...prev, specialtyId: data[0].id }));
       }
     } catch (err) {
       console.error('Error fetching specialties:', err);
+      setEspecialidades([]);
+      const detail = err.response?.data?.message || err.response?.data?.error || err.message;
+      setEspecialidadesError(detail || 'No se pudieron cargar las especialidades.');
     }
   };
 
@@ -136,10 +142,20 @@ export default function Doctores() {
                 value={form.specialtyId}
                 onChange={e => setForm({ ...form, specialtyId: e.target.value })}
               >
+                <option value="" disabled>
+                  {especialidades.length === 0 ? 'No hay especialidades disponibles' : 'Seleccione una especialidad'}
+                </option>
                 {especialidades.map(esp => (
-                  <option key={esp.id} value={esp.id}>{esp.name}</option>
+                  <option key={esp.id} value={esp.id}>
+                    {esp.name} - Q {Number(esp.consultationPrice || 0).toFixed(2)}
+                  </option>
                 ))}
               </select>
+              {especialidadesError && (
+                <p className="mt-2 rounded-md bg-red-50 p-2 text-xs text-red-700 ring-1 ring-red-200">
+                  {especialidadesError}
+                </p>
+              )}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -232,7 +248,9 @@ export default function Doctores() {
                 <div className="flex flex-col justify-between gap-3 sm:flex-row">
                   <div>
                     <p className="text-lg font-bold text-slate-950">{doctor.nombre}</p>
-                    <p className="text-sm text-[#2f6f62]">{doctor.specialtyName}</p>
+                    <p className="text-sm text-[#2f6f62]">
+                      {doctor.specialtyName} · Q {Number(doctor.consultationPrice || 0).toFixed(2)}
+                    </p>
                   </div>
                   <p className="font-mono text-xs text-slate-400">ID {doctor.id}</p>
                 </div>

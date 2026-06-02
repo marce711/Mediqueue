@@ -69,7 +69,7 @@ public class DoctorService {
 
     @Transactional(readOnly = true)
     public List<Specialty> listarEspecialidades() {
-        return specialtyRepository.findAll();
+        return specialtyRepository.findByActivaTrueOrderByNameAsc();
     }
 
     private DoctorHorario buildHorario(UUID doctorId, DoctorScheduleRequest schedule) {
@@ -95,6 +95,7 @@ public class DoctorService {
                 doctor.getNombre(),
                 doctor.getSpecialty().getId(),
                 doctor.getSpecialty().getName(),
+                doctor.getSpecialty().getConsultationPrice(),
                 doctor.getTelefono(),
                 doctor.getCorreo(),
                 doctor.isActivo(),

@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -50,6 +51,12 @@ public class Appointment {
     @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;
 
+    @Column(name = "duration_minutes", nullable = false)
+    private Integer durationMinutes;
+
+    @Column(name = "consultation_price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal consultationPrice;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AppointmentStatus status;
@@ -70,6 +77,12 @@ public class Appointment {
     void prePersist() {
         if (status == null) {
             status = AppointmentStatus.PENDING;
+        }
+        if (durationMinutes == null) {
+            durationMinutes = 30;
+        }
+        if (consultationPrice == null) {
+            consultationPrice = BigDecimal.ZERO;
         }
         LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) {

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { citaService, pacienteService, doctorService } from '../services/api';
 import { Activity, CalendarPlus, Clock, Search, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Citas() {
+  const navigate = useNavigate();
   const [citas, setCitas] = useState([]);
   const [doctores, setDoctores] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,9 +14,14 @@ export default function Citas() {
     patientId: '', 
     doctorId: '', 
     appointmentDate: '',
+    durationMinutes: 30,
     reason: '' 
   });
   const [message, setMessage] = useState(null);
+  const [availability, setAvailability] = useState(null);
+
+  const selectedDoctor = doctores.find(doctor => doctor.id === form.doctorId);
+  const selectedPrice = selectedDoctor?.consultationPrice;
 
   useEffect(() => {
     fetchCitas();
@@ -36,9 +43,11 @@ export default function Citas() {
   const fetchDoctores = async () => {
     try {
       const res = await doctorService.listar();
-      setDoctores(res.data);
+      setDoctores(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Error cargando doctores:', err);
+      setDoctores([]);
+      setMessage({ type: 'error', text: 'No se pudieron cargar los doctores. Verifique que doctor-horario y el API Gateway esten activos.' });
     }
   };
 
@@ -54,23 +63,57 @@ export default function Citas() {
     }
   };
 
+  const handleCheckAvailability = async () => {
+    if (!form.doctorId || !form.appointmentDate) {
+      setMessage({ type: 'error', text: 'Seleccione doctor, fecha y hora antes de validar disponibilidad.' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setAvailability(null);
+      const res = await citaService.verificarDisponibilidad(form.doctorId, form.appointmentDate, form.durationMinutes);
+      setAvailability(res.data);
+      setMessage({
+        type: res.data.available ? 'success' : 'error',
+        text: res.data.available
+          ? 'Horario disponible. Puede crear la cita pendiente y continuar al pago.'
+          : 'El doctor no esta disponible en la fecha y hora seleccionada.',
+      });
+    } catch (err) {
+      const detail = err.response?.data?.message || err.response?.data?.error;
+      setAvailability(null);
+      setMessage({ type: 'error', text: detail || 'No se pudo validar la disponibilidad del doctor.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateCita = async (e) => {
     e.preventDefault();
     if (!form.patientId) {
       setMessage({ type: 'error', text: 'Debe validar un paciente antes de agendar.' });
       return;
     }
+    if (!availability?.available || availability.doctorId !== form.doctorId) {
+      setMessage({ type: 'error', text: 'Debe verificar disponibilidad para este doctor y horario antes de crear la cita.' });
+      return;
+    }
     
     try {
       setLoading(true);
-      const res = await citaService.crear(form);
-      setMessage({ type: 'success', text: `Cita agendada exitosamente. ID de seguimiento: ${res.data.id}` });
-      setForm({ patientId: '', doctorId: '', appointmentDate: '', reason: '' });
+      const idempotencyKey = `cita-${form.patientId}-${form.doctorId}-${form.appointmentDate}-${form.durationMinutes}`;
+      const res = await citaService.crear(form, idempotencyKey);
+      setMessage({ type: 'success', text: `Cita pendiente creada. Complete el pago para confirmar. ID: ${res.data.id}` });
+      setForm({ patientId: '', doctorId: '', appointmentDate: '', durationMinutes: 30, reason: '' });
       setPacienteFound(null);
       setSearchDpi('');
+      setAvailability(null);
       fetchCitas();
+      navigate(`/pagos?appointmentId=${res.data.id}&amount=${res.data.consultationPrice}`);
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al agendar la cita. Verifique la disponibilidad del horario.' });
+      const detail = err.response?.data?.message || err.response?.data?.error;
+      setMessage({ type: 'error', text: detail || 'Error al crear la cita pendiente. Verifique la disponibilidad del horario.' });
     } finally {
       setLoading(false);
     }
@@ -126,11 +169,16 @@ export default function Citas() {
                     required
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border bg-white"
                     value={form.doctorId}
-                    onChange={e => setForm({...form, doctorId: e.target.value})}
+                    onChange={e => {
+                      setForm({...form, doctorId: e.target.value});
+                      setAvailability(null);
+                    }}
                   >
                     <option value="">Seleccione un doctor...</option>
                     {doctores.map(doc => (
-                      <option key={doc.id} value={doc.id}>{doc.nombre} - {doc.especialidad}</option>
+                      <option key={doc.id} value={doc.id}>
+                        {doc.nombre} - {doc.specialtyName} - Q {Number(doc.consultationPrice || 0).toFixed(2)}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -142,8 +190,34 @@ export default function Citas() {
                     type="datetime-local" 
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border"
                     value={form.appointmentDate}
-                    onChange={e => setForm({...form, appointmentDate: e.target.value})}
+                    onChange={e => {
+                      setForm({...form, appointmentDate: e.target.value});
+                      setAvailability(null);
+                    }}
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Duración</label>
+                    <select
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border bg-white"
+                      value={form.durationMinutes}
+                      onChange={e => {
+                        setForm({ ...form, durationMinutes: Number(e.target.value) });
+                        setAvailability(null);
+                      }}
+                    >
+                      <option value={20}>20 minutos</option>
+                      <option value={30}>30 minutos</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Precio</label>
+                    <div className="rounded-md border border-gray-200 bg-gray-50 p-2.5 text-sm font-semibold text-gray-800">
+                      {selectedPrice ? `Q ${Number(selectedPrice).toFixed(2)}` : 'Seleccione doctor'}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -156,12 +230,21 @@ export default function Citas() {
                   ></textarea>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={handleCheckAvailability}
+                  disabled={loading || !form.doctorId || !form.appointmentDate}
+                  className="w-full rounded-md border border-blue-200 bg-blue-50 py-3 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+                >
+                  Verificar disponibilidad
+                </button>
+
                 <button 
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !availability?.available}
                   className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition font-medium text-sm shadow-sm disabled:opacity-50"
                 >
-                  {loading ? 'Procesando...' : 'Confirmar Cita'}
+                  {loading ? 'Procesando...' : 'Crear cita pendiente y pagar'}
                 </button>
               </form>
 
@@ -198,10 +281,12 @@ export default function Citas() {
                         <Clock size={14} className="text-blue-500" />
                         {new Date(cita.appointmentDate).toLocaleString()}
                       </div>
-                      <div className="text-xs text-gray-400 font-mono mt-1">Ref: {cita.id.substring(0,8)}</div>
+                      <div className="text-xs text-gray-400 font-mono mt-1">
+                        Ref: {cita.id?.substring(0,8)} · {cita.durationMinutes || 30} min · Q {Number(cita.consultationPrice || 0).toFixed(2)}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-700 font-medium">ID: {cita.patientId.substring(0,8)}...</td>
-                    <td className="px-6 py-4 text-gray-700">ID: {cita.doctorId.substring(0,8)}...</td>
+                    <td className="px-6 py-4 text-gray-700 font-medium">ID: {cita.patientId?.substring(0,8)}...</td>
+                    <td className="px-6 py-4 text-gray-700">ID: {cita.doctorId?.substring(0,8)}...</td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
                         cita.status === 'CONFIRMED' ? 'bg-green-100 text-green-800 border-green-200' : 

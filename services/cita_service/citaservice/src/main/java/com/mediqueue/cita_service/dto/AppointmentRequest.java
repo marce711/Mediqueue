@@ -1,6 +1,8 @@
 package com.mediqueue.cita_service.dto;
 
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -15,6 +17,10 @@ public record AppointmentRequest(
 
         @NotNull(message = "appointmentDate is required")
         @Future(message = "appointmentDate must be in the future")
-        LocalDateTime appointmentDate
+        LocalDateTime appointmentDate,
+
+        @Min(value = 20, message = "durationMinutes must be at least 20")
+        @Max(value = 30, message = "durationMinutes must be at most 30")
+        Integer durationMinutes
 ) {
 }

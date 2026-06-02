@@ -62,11 +62,11 @@ export default function Dashboard() {
           </div>
           <div className="border-l-4 border-[#f6c85f] pl-4">
             <p className="font-semibold">2. Cita</p>
-            <p className="mt-1 text-sm text-white/70">Agende la consulta y conserve el ID generado.</p>
+            <p className="mt-1 text-sm text-white/70">Valide disponibilidad y cree la cita pendiente.</p>
           </div>
           <div className="border-l-4 border-[#f6c85f] pl-4">
             <p className="font-semibold">3. Pago</p>
-            <p className="mt-1 text-sm text-white/70">Procese el cobro ingresando el ID de cita.</p>
+            <p className="mt-1 text-sm text-white/70">Procese el cobro para confirmar la cita.</p>
           </div>
         </div>
       </section>

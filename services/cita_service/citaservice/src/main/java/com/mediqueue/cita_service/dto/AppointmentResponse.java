@@ -2,6 +2,7 @@ package com.mediqueue.cita_service.dto;
 
 import com.mediqueue.cita_service.entity.AppointmentStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -10,6 +11,8 @@ public record AppointmentResponse(
         String patientId,
         String doctorId,
         LocalDateTime appointmentDate,
+        Integer durationMinutes,
+        BigDecimal consultationPrice,
         AppointmentStatus status,
         LocalDateTime createdAt
 ) {

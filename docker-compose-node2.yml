@@ -117,6 +117,88 @@ services:
       - rabbitmq
     restart: always
 
+  paciente-service:
+    build: ./services/paciente_service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+    ports:
+      - "8083:8083"
+    depends_on:
+      - haproxy
+      - rabbitmq
+    restart: always
+
+  pago-service:
+    build: ./services/pago_service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+      - APP_APPOINTMENT_SERVICE_URL=http://cita-service:8081
+    ports:
+      - "8084:8084"
+    depends_on:
+      - haproxy
+      - rabbitmq
+      - cita-service
+    restart: always
+
+  api-gateway:
+    build: ./services/apigateway
+    environment:
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+      - PACIENTE_SERVICE_URL=http://paciente-service:8083
+      - CITA_SERVICE_URL=http://cita-service:8081
+      - DOCTOR_SERVICE_URL=http://doctor-horario:8082
+      - PAGO_SERVICE_URL=http://pago-service:8084
+      - NOTIFICACION_SERVICE_URL=http://notificacion-service:8085
+      - PACIENTE_SERVICE_URLS=http://paciente-service:8083,http://100.76.170.62:8083,http://100.115.210.113:8083,http://100.99.158.111:8083
+      - CITA_SERVICE_URLS=http://cita-service:8081,http://100.115.210.113:8081,http://100.76.170.62:8081,http://100.99.158.111:8081
+      - DOCTOR_SERVICE_URLS=http://doctor-horario:8082,http://100.115.210.113:8082,http://100.76.170.62:8082,http://100.99.158.111:8082
+      - PAGO_SERVICE_URLS=http://pago-service:8084,http://100.99.158.111:8084,http://100.115.210.113:8084,http://100.76.170.62:8084
+      - NOTIFICACION_SERVICE_URLS=http://notificacion-service:8085,http://100.99.158.111:8085,http://100.115.210.113:8085,http://100.76.170.62:8085
+    ports:
+      - "8080:8080"
+    depends_on:
+      - paciente-service
+      - cita-service
+      - doctor-horario
+      - pago-service
+      - notificacion-service
+    restart: always
+
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    restart: always
+
+  notificacion-service:
+    build: ./services/notificacion_service
+    environment:
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+    ports:
+      - "8085:8085"
+    depends_on:
+      - rabbitmq
+    restart: always
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mediqueue.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - haproxy
+    restart: always
+
 volumes:
   postgres2_data:
   rabbitmq_data:
+  pgadmin_data:

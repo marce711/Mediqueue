@@ -28,17 +28,23 @@ export const citaService = {
     api.post('/api/v1/appointments', data, {
       headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
     }),
-  verificarDisponibilidad: (doctorId, date) => 
+  obtener: (id) => api.get(`/api/v1/appointments/${id}`),
+  verificarDisponibilidad: (doctorId, date, durationMinutes = 30) => 
     api.get('/api/v1/appointments/availability', {
-      params: { doctorId, appointmentDate: date },
+      params: { doctorId, appointmentDate: date, durationMinutes },
     }),
+  actualizarEstado: (id, status) => api.patch(`/api/v1/appointments/${id}/status`, { status }),
   cancelar: (id) => api.delete(`/api/v1/appointments/${id}`),
 };
 
 export const pagoService = {
+  listar: () => api.get('/api/payments'),
   listarPorPaciente: (pacienteId) => api.get(`/api/payments/paciente/${pacienteId}`),
   obtenerPorCita: (appointmentId) => api.get(`/api/payments/appointment/${appointmentId}`),
-  procesar: (data) => api.post('/api/payments', data),
+  procesar: (data, idempotencyKey) =>
+    api.post('/api/payments', data, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+    }),
 };
 
 export default api;

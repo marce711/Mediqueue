@@ -6,15 +6,12 @@ import com.mediqueue.cita_service.dto.AppointmentUpdateRequest;
 import com.mediqueue.cita_service.dto.AvailabilityResponse;
 import com.mediqueue.cita_service.dto.DoctorValidationRequest;
 import com.mediqueue.cita_service.dto.DoctorValidationResponse;
-import com.mediqueue.cita_service.dto.ExternalDoctorHorarioResponse;
-import com.mediqueue.cita_service.dto.ExternalPacienteResponse;
 import com.mediqueue.cita_service.dto.PatientValidationRequest;
 import com.mediqueue.cita_service.dto.PatientValidationResponse;
 import com.mediqueue.cita_service.entity.Appointment;
 import com.mediqueue.cita_service.entity.AppointmentStatus;
 import com.mediqueue.cita_service.exception.AppointmentConflictException;
 import com.mediqueue.cita_service.exception.AppointmentNotFoundException;
-import com.mediqueue.cita_service.exception.ExternalServiceException;
 import com.mediqueue.cita_service.exception.InvalidAppointmentException;
 import com.mediqueue.cita_service.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +22,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +34,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {
+
+    private static final int DEFAULT_DURATION_MINUTES = 30;
+    private static final int MIN_DURATION_MINUTES = 20;
+    private static final int MAX_DURATION_MINUTES = 30;
+    private static final int CANCELLATION_NOTICE_HOURS = 48;
 
     private static final Set<AppointmentStatus> ACTIVE_STATUSES = EnumSet.of(
             AppointmentStatus.PENDING,
@@ -76,15 +76,23 @@ public class AppointmentService {
             }
         }
 
+        int durationMinutes = normalizeDuration(request.durationMinutes());
         validateFutureDate(request.appointmentDate());
         validatePatientExists(request.patientId());
-        validateDoctorHasAvailableSchedule(request.doctorId());
-        validateAvailability(request.doctorId(), request.patientId(), request.appointmentDate());
+        DoctorValidationResponse doctorValidation = validateDoctorHasAvailableSchedule(
+                request.doctorId(),
+                request.appointmentDate(),
+                durationMinutes
+        );
+        BigDecimal consultationPrice = resolveConsultationPrice(doctorValidation);
+        validateAvailability(request.doctorId(), request.patientId(), request.appointmentDate(), durationMinutes);
 
         Appointment appointment = Appointment.builder()
                 .patientId(request.patientId().trim())
                 .doctorId(request.doctorId().trim())
                 .appointmentDate(request.appointmentDate())
+                .durationMinutes(durationMinutes)
+                .consultationPrice(consultationPrice)
                 .status(AppointmentStatus.PENDING)
                 .idempotencyKey(normalizedIdempotencyKey)
                 .build();
@@ -126,21 +134,28 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "appointmentAvailability", key = "#doctorId.trim() + ':' + #appointmentDate.toString()")
-    public AvailabilityResponse checkAvailability(String doctorId, LocalDateTime appointmentDate) {
+    @Cacheable(value = "appointmentAvailability", key = "#doctorId.trim() + ':' + #appointmentDate.toString() + ':' + #durationMinutes")
+    public AvailabilityResponse checkAvailability(String doctorId, LocalDateTime appointmentDate, Integer durationMinutes) {
         validateFutureDate(appointmentDate);
-        boolean unavailable = appointmentRepository.existsByDoctorIdAndAppointmentDateAndStatusIn(
-                doctorId.trim(),
+        int normalizedDuration = normalizeDuration(durationMinutes);
+        DoctorValidationResponse doctorValidation = requestDoctorValidation(doctorId, appointmentDate, normalizedDuration);
+        boolean hasDoctorSchedule = doctorValidation != null && doctorValidation.hasAvailableSchedule();
+        boolean hasAppointmentOverlap = hasOverlap(
+                appointmentRepository.findByDoctorIdAndStatusIn(doctorId.trim(), ACTIVE_STATUSES),
                 appointmentDate,
-                ACTIVE_STATUSES
+                normalizedDuration
         );
-        return new AvailabilityResponse(doctorId.trim(), appointmentDate, !unavailable);
+        boolean unavailable = !hasDoctorSchedule || hasAppointmentOverlap;
+        return new AvailabilityResponse(doctorId.trim(), appointmentDate, normalizedDuration, !unavailable);
     }
 
     @Transactional
     @CacheEvict(value = "appointmentAvailability", allEntries = true)
     public AppointmentResponse updateStatus(UUID id, AppointmentUpdateRequest request) {
         Appointment appointment = getAppointment(id);
+        if (request.status() == AppointmentStatus.CANCELLED && appointment.getStatus() != AppointmentStatus.CANCELLED) {
+            validateCancellationNotice(appointment);
+        }
         appointment.setStatus(request.status());
         Appointment updatedAppointment = appointmentRepository.save(appointment);
         if (request.status() == AppointmentStatus.CANCELLED) {
@@ -156,6 +171,7 @@ public class AppointmentService {
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
             return toResponse(appointment);
         }
+        validateCancellationNotice(appointment);
         appointment.setStatus(AppointmentStatus.CANCELLED);
         Appointment cancelledAppointment = appointmentRepository.save(appointment);
         eventPublisher.publishCancelled(cancelledAppointment);
@@ -167,23 +183,23 @@ public class AppointmentService {
                 .orElseThrow(() -> new AppointmentNotFoundException(id));
     }
 
-    private void validateAvailability(String doctorId, String patientId, LocalDateTime appointmentDate) {
-        boolean doctorUnavailable = appointmentRepository.existsByDoctorIdAndAppointmentDateAndStatusIn(
-                doctorId.trim(),
+    private void validateAvailability(String doctorId, String patientId, LocalDateTime appointmentDate, int durationMinutes) {
+        boolean doctorUnavailable = hasOverlap(
+                appointmentRepository.findByDoctorIdAndStatusIn(doctorId.trim(), ACTIVE_STATUSES),
                 appointmentDate,
-                ACTIVE_STATUSES
+                durationMinutes
         );
         if (doctorUnavailable) {
-            throw new AppointmentConflictException("Doctor already has an active appointment at the requested time");
+            throw new AppointmentConflictException("Doctor already has an active appointment in the requested time range");
         }
 
-        boolean patientUnavailable = appointmentRepository.existsByPatientIdAndAppointmentDateAndStatusIn(
-                patientId.trim(),
+        boolean patientUnavailable = hasOverlap(
+                appointmentRepository.findByPatientIdAndStatusIn(patientId.trim(), ACTIVE_STATUSES),
                 appointmentDate,
-                ACTIVE_STATUSES
+                durationMinutes
         );
         if (patientUnavailable) {
-            throw new AppointmentConflictException("Patient already has an active appointment at the requested time");
+            throw new AppointmentConflictException("Patient already has an active appointment in the requested time range");
         }
     }
 
@@ -199,21 +215,60 @@ public class AppointmentService {
         }
     }
 
-    private void validateDoctorHasAvailableSchedule(String doctorId) {
-        DoctorValidationRequest request = new DoctorValidationRequest(doctorId);
-        DoctorValidationResponse response = (DoctorValidationResponse) rabbitTemplate.convertSendAndReceive(
+    private DoctorValidationResponse validateDoctorHasAvailableSchedule(String doctorId, LocalDateTime appointmentDate, int durationMinutes) {
+        DoctorValidationResponse response = requestDoctorValidation(doctorId, appointmentDate, durationMinutes);
+        if (response == null || !response.hasAvailableSchedule()) {
+            throw new InvalidAppointmentException("Doctor does not have available schedules: " + doctorId);
+        }
+        return response;
+    }
+
+    private DoctorValidationResponse requestDoctorValidation(String doctorId, LocalDateTime appointmentDate, int durationMinutes) {
+        DoctorValidationRequest request = new DoctorValidationRequest(doctorId, appointmentDate, durationMinutes);
+        return (DoctorValidationResponse) rabbitTemplate.convertSendAndReceive(
                 rpcExchange,
                 doctorValidationRoutingKey,
                 request
         );
-        if (response == null || !response.hasAvailableSchedule()) {
-            throw new InvalidAppointmentException("Doctor does not have available schedules: " + doctorId);
-        }
     }
 
     private void validateFutureDate(LocalDateTime appointmentDate) {
         if (appointmentDate == null || !appointmentDate.isAfter(LocalDateTime.now())) {
             throw new InvalidAppointmentException("Appointment date must be in the future");
+        }
+    }
+
+    private int normalizeDuration(Integer durationMinutes) {
+        int normalized = durationMinutes == null ? DEFAULT_DURATION_MINUTES : durationMinutes;
+        if (normalized < MIN_DURATION_MINUTES || normalized > MAX_DURATION_MINUTES) {
+            throw new InvalidAppointmentException("Appointment duration must be between 20 and 30 minutes");
+        }
+        return normalized;
+    }
+
+    private BigDecimal resolveConsultationPrice(DoctorValidationResponse doctorValidation) {
+        if (doctorValidation.consultationPrice() == null || doctorValidation.consultationPrice().signum() <= 0) {
+            throw new InvalidAppointmentException("Doctor does not have a valid consultation price");
+        }
+        return doctorValidation.consultationPrice();
+    }
+
+    private boolean hasOverlap(List<Appointment> appointments, LocalDateTime requestedStart, int requestedDurationMinutes) {
+        LocalDateTime requestedEnd = requestedStart.plusMinutes(requestedDurationMinutes);
+        return appointments.stream().anyMatch(existing -> {
+            int existingDuration = existing.getDurationMinutes() == null
+                    ? DEFAULT_DURATION_MINUTES
+                    : existing.getDurationMinutes();
+            LocalDateTime existingStart = existing.getAppointmentDate();
+            LocalDateTime existingEnd = existingStart.plusMinutes(existingDuration);
+            return existingStart.isBefore(requestedEnd) && existingEnd.isAfter(requestedStart);
+        });
+    }
+
+    private void validateCancellationNotice(Appointment appointment) {
+        LocalDateTime cancellationLimit = appointment.getAppointmentDate().minusHours(CANCELLATION_NOTICE_HOURS);
+        if (LocalDateTime.now().isAfter(cancellationLimit)) {
+            throw new InvalidAppointmentException("Appointments can only be cancelled with at least 48 hours notice");
         }
     }
 
@@ -234,6 +289,8 @@ public class AppointmentService {
                 appointment.getPatientId(),
                 appointment.getDoctorId(),
                 appointment.getAppointmentDate(),
+                appointment.getDurationMinutes(),
+                appointment.getConsultationPrice(),
                 appointment.getStatus(),
                 appointment.getCreatedAt()
         );

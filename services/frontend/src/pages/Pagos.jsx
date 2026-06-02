@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DollarSign, FileText, Hash, Search } from 'lucide-react';
-import { pagoService } from '../services/api';
+import { useSearchParams } from 'react-router-dom';
+import { citaService, pagoService } from '../services/api';
 
 export default function Pagos() {
+  const [searchParams] = useSearchParams();
   const [appointmentId, setAppointmentId] = useState('');
   const [amount, setAmount] = useState('');
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    const appointmentFromQuery = searchParams.get('appointmentId');
+    const amountFromQuery = searchParams.get('amount');
+    if (appointmentFromQuery) {
+      setAppointmentId(appointmentFromQuery);
+      if (amountFromQuery) {
+        setAmount(amountFromQuery);
+      }
+      setMessage({ type: 'success', text: 'Cita pendiente recibida. Registre el pago para confirmarla.' });
+    }
+  }, [searchParams]);
 
   const handleSearch = async () => {
     if (!appointmentId.trim()) return;
@@ -22,6 +36,17 @@ export default function Pagos() {
     } catch (err) {
       console.error(err);
       setPagos([]);
+      try {
+        const cita = await citaService.obtener(appointmentId.trim());
+        if (cita.data?.consultationPrice) {
+          setAmount(String(cita.data.consultationPrice));
+          setMessage({ type: 'success', text: 'Cita encontrada. El monto fue cargado automaticamente.' });
+          setError(null);
+          return;
+        }
+      } catch (lookupError) {
+        console.error(lookupError);
+      }
       setError('No se encontraron pagos para esta cita.');
     } finally {
       setLoading(false);
@@ -36,16 +61,18 @@ export default function Pagos() {
       setLoading(true);
       setError(null);
       setMessage(null);
+      const normalizedAppointmentId = appointmentId.trim();
       const res = await pagoService.procesar({
-        appointmentId: appointmentId.trim(),
+        appointmentId: normalizedAppointmentId,
         amount: Number(amount),
-      });
+      }, `pago-${normalizedAppointmentId}`);
       setPagos([res.data]);
-      setMessage({ type: 'success', text: 'Pago registrado para la cita indicada.' });
+      setMessage({ type: 'success', text: 'Pago registrado. La cita fue confirmada.' });
       setAmount('');
     } catch (err) {
       console.error(err);
-      setMessage({ type: 'error', text: 'No se pudo registrar el pago. Verifique que el ID de cita exista.' });
+      const detail = err.response?.data?.message || err.response?.data?.error;
+      setMessage({ type: 'error', text: detail || 'No se pudo registrar el pago. Verifique que el ID de cita exista.' });
     } finally {
       setLoading(false);
     }
