@@ -1,4 +1,4 @@
--- Inicializacion idempotente de la base Mediqueue.
+docker compose -f docker-compose-node2.yml up -d postgres2 haproxy-- Inicializacion idempotente de la base Mediqueue.
 -- Este archivo puede ejecutarse mas de una vez sin fallar por objetos existentes.
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
