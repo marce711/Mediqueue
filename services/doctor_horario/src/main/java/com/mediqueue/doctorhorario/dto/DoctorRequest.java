@@ -27,6 +27,8 @@ public record DoctorRequest(
 
         Boolean activo,
 
+        Integer maxAppointmentsPerDay,
+
         @Valid
         @NotEmpty(message = "Debe registrar al menos un horario")
         List<DoctorScheduleRequest> horarios

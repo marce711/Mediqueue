@@ -47,6 +47,12 @@ public class DoctorHorarioController {
         return ResponseEntity.ok(doctorService.listar());
     }
 
+    @PatchMapping("/doctores/{id}/estado")
+    public ResponseEntity<DoctorResponse> cambiarEstadoDoctor(@PathVariable UUID id) {
+        logger.info("PATCH /api/horarios/doctores/{}/estado recibido", id);
+        return ResponseEntity.ok(doctorService.toggleStatus(id));
+    }
+
     @GetMapping("/especialidades")
     public ResponseEntity<List<Specialty>> listarEspecialidades() {
         logger.info("GET /api/horarios/especialidades recibido");

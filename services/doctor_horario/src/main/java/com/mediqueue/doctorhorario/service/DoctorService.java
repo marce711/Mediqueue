@@ -47,6 +47,7 @@ public class DoctorService {
         doctor.setTelefono(blankToNull(request.telefono()));
         doctor.setCorreo(correo.isBlank() ? null : correo);
         doctor.setEstado(request.activo() == null || request.activo() ? "ACTIVO" : "INACTIVO");
+        doctor.setMaxAppointmentsPerDay(request.maxAppointmentsPerDay() == null ? 10 : request.maxAppointmentsPerDay());
 
         Doctor savedDoctor = doctorRepository.save(doctor);
         List<DoctorHorario> horarios = request.horarios().stream()
@@ -57,9 +58,19 @@ public class DoctorService {
         return toResponse(savedDoctor, horarios);
     }
 
+    @Transactional
+    public DoctorResponse toggleStatus(UUID id) {
+        Doctor doctor = doctorRepository.findById(id)
+                .orElseThrow(() -> new InvalidHorarioException("Doctor no encontrado con ID: " + id));
+        doctor.setActivo(!doctor.isActivo());
+        Doctor saved = doctorRepository.save(doctor);
+        List<DoctorHorario> horarios = horarioRepository.findByDoctorIdOrderByDiaSemanaAscHoraInicioAsc(id);
+        return toResponse(saved, horarios);
+    }
+
     @Transactional(readOnly = true)
     public List<DoctorResponse> listar() {
-        return doctorRepository.findByEstado("ACTIVO").stream()
+        return doctorRepository.findAll().stream()
                 .map(doctor -> toResponse(
                         doctor,
                         horarioRepository.findByDoctorIdOrderByDiaSemanaAscHoraInicioAsc(doctor.getId())

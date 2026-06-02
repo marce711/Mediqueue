@@ -1,13 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { citaService, pacienteService, doctorService } from '../services/api';
-import { Activity, CalendarPlus, Clock, Search, User } from 'lucide-react';
+import { Activity, Calendar as CalendarIcon, Clock, Search, User, Filter, Trash2, X, ChevronLeft, ChevronRight, Hash, CalendarPlus, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const DOCTOR_COLORS = [
+  'bg-blue-100 text-blue-800 border-blue-200',
+  'bg-purple-100 text-purple-800 border-purple-200',
+  'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'bg-rose-100 text-rose-800 border-rose-200',
+  'bg-amber-100 text-amber-800 border-amber-200',
+  'bg-indigo-100 text-indigo-800 border-indigo-200',
+  'bg-teal-100 text-teal-800 border-teal-200',
+  'bg-orange-100 text-orange-800 border-orange-200',
+];
 
 export default function Citas() {
   const navigate = useNavigate();
   const [citas, setCitas] = useState([]);
   const [doctores, setDoctores] = useState([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showIds, setShowIds] = useState(false);
+  
+  // Agendamiento State
   const [searchDpi, setSearchDpi] = useState('');
   const [pacienteFound, setPacienteFound] = useState(null);
   const [form, setForm] = useState({ 
@@ -20,34 +36,35 @@ export default function Citas() {
   const [message, setMessage] = useState(null);
   const [availability, setAvailability] = useState(null);
 
-  const selectedDoctor = doctores.find(doctor => doctor.id === form.doctorId);
-  const selectedPrice = selectedDoctor?.consultationPrice;
-
+  // Vista de Calendario
+  const [viewDate, setViewDate] = useState(new Date());
+  
   useEffect(() => {
-    fetchCitas();
     fetchDoctores();
-  }, []);
-
-  const fetchCitas = async () => {
-    try {
-      setLoading(true);
-      const res = await citaService.listar();
-      setCitas(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchCitas();
+  }, [selectedDoctorId]);
 
   const fetchDoctores = async () => {
     try {
       const res = await doctorService.listar();
-      setDoctores(Array.isArray(res.data) ? res.data : []);
+      setDoctores(res.data);
     } catch (err) {
-      console.error('Error cargando doctores:', err);
-      setDoctores([]);
-      setMessage({ type: 'error', text: 'No se pudieron cargar los doctores. Verifique que doctor-horario y el API Gateway esten activos.' });
+      console.error('Error al cargar doctores:', err);
+    }
+  };
+
+  const fetchCitas = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params = selectedDoctorId !== 'all' ? { doctorId: selectedDoctorId } : {};
+      const res = await citaService.listar(params);
+      setCitas(res.data);
+    } catch (err) {
+      console.error('Error al cargar citas:', err);
+      setError('No se pudieron cargar las citas.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,31 +76,26 @@ export default function Citas() {
       setMessage(null);
     } catch (err) {
       setPacienteFound(null);
-      setMessage({ type: 'error', text: 'El paciente con el DPI ingresado no existe en el sistema.' });
+      setMessage({ type: 'error', text: 'El paciente con el DPI ingresado no existe.' });
     }
   };
 
   const handleCheckAvailability = async () => {
     if (!form.doctorId || !form.appointmentDate) {
-      setMessage({ type: 'error', text: 'Seleccione doctor, fecha y hora antes de validar disponibilidad.' });
+      setMessage({ type: 'error', text: 'Seleccione doctor y fecha.' });
       return;
     }
-
     try {
       setLoading(true);
-      setAvailability(null);
       const res = await citaService.verificarDisponibilidad(form.doctorId, form.appointmentDate, form.durationMinutes);
       setAvailability(res.data);
       setMessage({
         type: res.data.available ? 'success' : 'error',
-        text: res.data.available
-          ? 'Horario disponible. Puede crear la cita pendiente y continuar al pago.'
-          : 'El doctor no esta disponible en la fecha y hora seleccionada.',
+        text: res.data.available ? 'Horario disponible.' : 'Horario no disponible.',
       });
     } catch (err) {
       const detail = err.response?.data?.message || err.response?.data?.error;
-      setAvailability(null);
-      setMessage({ type: 'error', text: detail || 'No se pudo validar la disponibilidad del doctor.' });
+      setMessage({ type: 'error', text: detail || 'Error al validar disponibilidad.' });
     } finally {
       setLoading(false);
     }
@@ -91,20 +103,12 @@ export default function Citas() {
 
   const handleCreateCita = async (e) => {
     e.preventDefault();
-    if (!form.patientId) {
-      setMessage({ type: 'error', text: 'Debe validar un paciente antes de agendar.' });
-      return;
-    }
-    if (!availability?.available || availability.doctorId !== form.doctorId) {
-      setMessage({ type: 'error', text: 'Debe verificar disponibilidad para este doctor y horario antes de crear la cita.' });
-      return;
-    }
-    
+    if (!form.patientId || !availability?.available) return;
     try {
       setLoading(true);
       const idempotencyKey = `cita-${form.patientId}-${form.doctorId}-${form.appointmentDate}-${form.durationMinutes}`;
       const res = await citaService.crear(form, idempotencyKey);
-      setMessage({ type: 'success', text: `Cita pendiente creada. Complete el pago para confirmar. ID: ${res.data.id}` });
+      setMessage({ type: 'success', text: 'Cita creada.' });
       setForm({ patientId: '', doctorId: '', appointmentDate: '', durationMinutes: 30, reason: '' });
       setPacienteFound(null);
       setSearchDpi('');
@@ -113,230 +117,251 @@ export default function Citas() {
       navigate(`/pagos?appointmentId=${res.data.id}&amount=${res.data.consultationPrice}`);
     } catch (err) {
       const detail = err.response?.data?.message || err.response?.data?.error;
-      setMessage({ type: 'error', text: detail || 'Error al crear la cita pendiente. Verifique la disponibilidad del horario.' });
+      setMessage({ type: 'error', text: detail || 'Error al crear cita.' });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCancelar = async (id) => {
+    if (!window.confirm('¿Esta seguro de que desea cancelar esta cita?')) return;
+    try {
+      setLoading(true);
+      await citaService.cancelar(id);
+      fetchCitas();
+      alert('Cita cancelada con exito.');
+    } catch (err) {
+      const detail = err.response?.data?.message || err.response?.data?.error;
+      alert(detail || 'No se pudo cancelar la cita. Verifique la regla de 48 horas.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const doctorColorsMap = useMemo(() => {
+    const map = {};
+    doctores.forEach((doc, i) => {
+      map[doc.id] = DOCTOR_COLORS[i % DOCTOR_COLORS.length];
+    });
+    return map;
+  }, [doctores]);
+
+  const calendarDays = useMemo(() => {
+    const start = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+    const end = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
+    const days = [];
+    for (let i = 0; i < start.getDay(); i++) days.push(null);
+    for (let i = 1; i <= end.getDate(); i++) {
+      const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), i);
+      const dayCitas = citas.filter(c => {
+        const cDate = new Date(c.appointmentDate);
+        return cDate.getDate() === i && cDate.getMonth() === viewDate.getMonth() && cDate.getFullYear() === viewDate.getFullYear();
+      });
+      days.push({ date, citas: dayCitas });
+    }
+    return days;
+  }, [viewDate, citas]);
+
+  const selectedDoctor = doctores.find(d => d.id === form.doctorId);
+
   return (
-    <div className="max-w-6xl mx-auto space-y-10 py-6">
-      <header className="border-b border-gray-200 pb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">Agenda de Citas Médicas</h2>
-        <p className="text-gray-500 mt-1">Control de citas, validación de disponibilidad y asignación de especialistas.</p>
+    <div className="mx-auto max-w-7xl space-y-8 py-2">
+      <header className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <p className="text-sm font-semibold uppercase tracking-wider text-[#2f6f62]">MediQueue</p>
+        <h2 className="mt-2 text-3xl font-bold text-slate-950">Gestion de Citas</h2>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Panel de Agendamiento */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900 mb-6 flex items-center gap-2">
-              <CalendarPlus size={20} className="text-blue-600" />
-              Agendar Nueva Cita
+      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+        <aside className="space-y-6">
+          {/* Nueva Cita */}
+          <section className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <h3 className="mb-5 flex items-center gap-2 text-lg font-bold text-slate-950">
+              <CalendarPlus size={20} className="text-[#2f6f62]" />
+              Nueva Cita
             </h3>
-
             <div className="space-y-4">
-              {/* Buscador de Paciente */}
-              <div className="pb-4 border-b border-gray-100">
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Validar Paciente (DPI)</label>
-                <div className="flex gap-2">
+              <div className="pb-4 border-b border-slate-100">
+                <label className="text-xs font-bold uppercase text-slate-500">Paciente (DPI)</label>
+                <div className="mt-2 flex gap-2">
                   <input 
-                    type="text" 
-                    placeholder="Ingrese DPI"
-                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 text-sm border"
+                    className="flex-1 rounded-md border border-slate-300 p-2 text-sm focus:border-[#2f6f62] focus:outline-none"
                     value={searchDpi}
                     onChange={e => setSearchDpi(e.target.value)}
                   />
-                  <button 
-                    onClick={handleSearchPaciente}
-                    className="p-2 bg-gray-100 rounded-md hover:bg-gray-200 text-gray-600"
-                  >
-                    <Search size={18} />
+                  <button onClick={handleSearchPaciente} className="p-2 bg-slate-100 rounded-md hover:bg-slate-200">
+                    <Search size={16} />
                   </button>
                 </div>
                 {pacienteFound && (
-                  <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-100 flex items-center gap-2">
-                    <User size={14} className="text-blue-600" />
-                    <span className="text-xs font-medium text-blue-800">{pacienteFound.nombre}</span>
+                  <div className="mt-2 text-xs font-semibold text-[#2f6f62] bg-[#e0eee8] p-2 rounded">
+                    {pacienteFound.nombre}
                   </div>
                 )}
               </div>
-
-              <form onSubmit={handleCreateCita} className="space-y-4 pt-2">
+              <form onSubmit={handleCreateCita} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Especialista</label>
+                  <label className="text-xs font-bold uppercase text-slate-500">Doctor</label>
                   <select 
-                    required
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border bg-white"
+                    className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm"
                     value={form.doctorId}
-                    onChange={e => {
-                      setForm({...form, doctorId: e.target.value});
-                      setAvailability(null);
-                    }}
+                    onChange={e => {setForm({...form, doctorId: e.target.value}); setAvailability(null);}}
                   >
-                    <option value="">Seleccione un doctor...</option>
-                    {doctores.map(doc => (
-                      <option key={doc.id} value={doc.id}>
-                        {doc.nombre} - {doc.specialtyName} - Q {Number(doc.consultationPrice || 0).toFixed(2)}
-                      </option>
+                    <option value="">Seleccione...</option>
+                    {doctores.filter(d => d.activo).map(doc => (
+                      <option key={doc.id} value={doc.id}>{doc.nombre}</option>
                     ))}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Fecha y Hora</label>
+                  <label className="text-xs font-bold uppercase text-slate-500">Fecha y Hora</label>
                   <input 
-                    required
-                    type="datetime-local" 
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border"
+                    type="datetime-local"
+                    className="mt-1 w-full rounded-md border border-slate-300 p-2 text-sm"
                     value={form.appointmentDate}
-                    onChange={e => {
-                      setForm({...form, appointmentDate: e.target.value});
-                      setAvailability(null);
-                    }}
+                    onChange={e => {setForm({...form, appointmentDate: e.target.value}); setAvailability(null);}}
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Duración</label>
-                    <select
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border bg-white"
-                      value={form.durationMinutes}
-                      onChange={e => {
-                        setForm({ ...form, durationMinutes: Number(e.target.value) });
-                        setAvailability(null);
-                      }}
-                    >
-                      <option value={20}>20 minutos</option>
-                      <option value={30}>30 minutos</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Precio</label>
-                    <div className="rounded-md border border-gray-200 bg-gray-50 p-2.5 text-sm font-semibold text-gray-800">
-                      {selectedPrice ? `Q ${Number(selectedPrice).toFixed(2)}` : 'Seleccione doctor'}
-                    </div>
-                  </div>
+                <div className="flex gap-3">
+                   <button type="button" onClick={handleCheckAvailability} className="flex-1 rounded-md bg-slate-100 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200">
+                    Validar
+                  </button>
+                  <button type="submit" disabled={!availability?.available} className="flex-1 rounded-md bg-[#12312b] py-2 text-xs font-bold text-white hover:bg-[#1b493f] disabled:opacity-50">
+                    Agendar
+                  </button>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Motivo de Consulta</label>
-                  <textarea 
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 text-sm border"
-                    rows="3"
-                    value={form.reason}
-                    onChange={e => setForm({...form, reason: e.target.value})}
-                  ></textarea>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleCheckAvailability}
-                  disabled={loading || !form.doctorId || !form.appointmentDate}
-                  className="w-full rounded-md border border-blue-200 bg-blue-50 py-3 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
-                >
-                  Verificar disponibilidad
-                </button>
-
-                <button 
-                  type="submit"
-                  disabled={loading || !availability?.available}
-                  className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition font-medium text-sm shadow-sm disabled:opacity-50"
-                >
-                  {loading ? 'Procesando...' : 'Crear cita pendiente y pagar'}
-                </button>
+                {message && <p className={`text-[10px] font-bold ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>{message.text}</p>}
               </form>
-
-              {message && (
-                <div className={`p-4 rounded-md text-sm ${
-                  message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-                }`}>
-                  {message.text}
-                </div>
-              )}
             </div>
-          </div>
-        </div>
+          </section>
 
-        {/* Listado de Citas */}
-        <div className="lg:col-span-2 space-y-6">
-          <h3 className="text-lg font-medium text-gray-900">Agenda del Día</h3>
-          
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50 text-gray-500">
-                <tr>
-                  <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider">Fecha / Hora</th>
-                  <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider">Paciente</th>
-                  <th className="px-6 py-4 text-left font-semibold uppercase tracking-wider">Especialista</th>
-                  <th className="px-6 py-4 text-center font-semibold uppercase tracking-wider">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {citas.map(cita => (
-                  <tr key={cita.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900 flex items-center gap-2">
-                        <Clock size={14} className="text-blue-500" />
-                        {new Date(cita.appointmentDate).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-400 font-mono mt-1">
-                        Ref: {cita.id?.substring(0,8)} · {cita.durationMinutes || 30} min · Q {Number(cita.consultationPrice || 0).toFixed(2)}
-                        <button 
-                          onClick={() => {navigator.clipboard.writeText(cita.id); alert('ID de cita copiado');}}
-                          className="ml-2 text-blue-400 hover:text-blue-600"
-                          title="Copiar ID de cita"
-                        >
-                          Copiar ID
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-gray-700 font-medium">{cita.patientName || 'Cargando...'}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-gray-400 font-mono">ID: {cita.patientId?.substring(0,8)}...</span>
-                        <button 
-                          onClick={() => {navigator.clipboard.writeText(cita.patientId); alert('ID de paciente copiado');}}
-                          className="text-[10px] text-blue-400 hover:underline"
-                        >
-                          Copiar
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      <div className="text-gray-700 font-medium">{cita.doctorName || 'Cargando...'}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-gray-400 font-mono">ID: {cita.doctorId?.substring(0,8)}...</span>
-                        <button 
-                          onClick={() => {navigator.clipboard.writeText(cita.doctorId); alert('ID de doctor copiado');}}
-                          className="text-[10px] text-blue-400 hover:underline"
-                        >
-                          Copiar
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
-                        cita.status === 'CONFIRMED' ? 'bg-green-100 text-green-800 border-green-200' : 
-                        cita.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border-red-200' : 
-                        'bg-blue-100 text-blue-800 border-blue-200'
-                      }`}>
-                        {cita.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {citas.length === 0 && !loading && (
-              <div className="py-20 text-center text-gray-400 italic flex flex-col items-center gap-2">
-                <Activity size={32} className="text-gray-200" />
-                No hay citas agendadas para este periodo.
+          {/* Filtros */}
+          <section className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <h3 className="mb-4 flex items-center gap-2 font-bold text-slate-900">
+              <Filter size={18} />
+              Filtros Calendario
+            </h3>
+            <div className="space-y-4">
+              <select
+                className="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-[#2f6f62] focus:outline-none"
+                value={selectedDoctorId}
+                onChange={(e) => setSelectedDoctorId(e.target.value)}
+              >
+                <option value="all">Todos los doctores</option>
+                {doctores.map(doc => <option key={doc.id} value={doc.id}>{doc.nombre}</option>)}
+              </select>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="showIds" checked={showIds} onChange={() => setShowIds(!showIds)} className="rounded border-slate-300 text-[#2f6f62]" />
+                <label htmlFor="showIds" className="text-xs text-slate-700 font-medium">Ver IDs detallados</label>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </section>
+        </aside>
+
+        <main className="space-y-6">
+          {/* Calendario */}
+          <section className="rounded-md bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900 uppercase">
+                {viewDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </h3>
+              <div className="flex gap-2">
+                <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-2 hover:bg-slate-100 rounded-full transition"><ChevronLeft size={20} /></button>
+                <button onClick={() => setViewDate(new Date())} className="px-3 py-1 text-sm font-bold bg-slate-100 rounded hover:bg-slate-200">Hoy</button>
+                <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} className="p-2 hover:bg-slate-100 rounded-full transition"><ChevronRight size={20} /></button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-px bg-slate-200 overflow-hidden rounded-md border border-slate-200">
+              {['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'].map(d => <div key={d} className="bg-slate-50 py-2 text-center text-[10px] font-bold uppercase text-slate-500">{d}</div>)}
+              {calendarDays.map((day, i) => (
+                <div key={i} className={`min-h-[110px] bg-white p-2 ${day ? '' : 'bg-slate-50/50'}`}>
+                  {day && (
+                    <>
+                      <span className={`text-xs font-bold ${day.date.toDateString() === new Date().toDateString() ? 'bg-blue-600 text-white w-5 h-5 inline-grid place-items-center rounded-full' : 'text-slate-400'}`}>{day.date.getDate()}</span>
+                      <div className="mt-1 space-y-1">
+                        {day.citas.slice(0, 3).map(cita => (
+                          <div key={cita.id} className={`truncate text-[9px] px-1 py-0.5 rounded border ${doctorColorsMap[cita.doctorId] || 'bg-gray-100 text-gray-700'}`}>
+                            {new Date(cita.appointmentDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} {cita.patientName}
+                          </div>
+                        ))}
+                        {day.citas.length > 3 && <div className="text-[8px] text-center text-slate-400 font-bold">+{day.citas.length - 3} mas</div>}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Agenda Table */}
+          <section className="rounded-md bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
+             <div className="border-b border-slate-100 p-6 bg-slate-50/50">
+              <h3 className="text-lg font-bold text-slate-900">Agenda de Citas</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-[10px] font-bold uppercase text-slate-500">
+                  <tr>
+                    <th className="px-6 py-4">Fecha / Hora</th>
+                    <th className="px-6 py-4">Paciente</th>
+                    <th className="px-6 py-4">Especialista</th>
+                    <th className="px-6 py-4 text-center">Estado</th>
+                    <th className="px-6 py-4 text-center">Accion</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {citas.map(cita => (
+                    <tr key={cita.id} className="hover:bg-slate-50 transition">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 font-bold text-slate-900">
+                          <Clock size={12} className="text-blue-500" />
+                          {new Date(cita.appointmentDate).toLocaleString()}
+                        </div>
+                        {showIds && <div className="mt-1 font-mono text-[9px] text-slate-400">ID: {cita.id}</div>}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-slate-700">{cita.patientName}</div>
+                        {showIds && (
+                          <div className="mt-1 flex items-center gap-2 font-mono text-[9px] text-slate-400">
+                            ID: {cita.patientId}
+                            <button onClick={() => navigator.clipboard.writeText(cita.patientId)} className="text-blue-400 hover:underline">Copiar</button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 font-semibold text-slate-700">
+                          <div className={`h-2 w-2 rounded-full ${doctorColorsMap[cita.doctorId]?.split(' ')[0] || 'bg-gray-400'}`}></div>
+                          {cita.doctorName}
+                        </div>
+                        {showIds && (
+                          <div className="mt-1 flex items-center gap-2 font-mono text-[9px] text-slate-400">
+                            ID: {cita.doctorId}
+                            <button onClick={() => navigator.clipboard.writeText(cita.doctorId)} className="text-blue-400 hover:underline">Copiar</button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
+                          cita.status === 'CONFIRMED' ? 'bg-green-100 text-green-800 border-green-200' : 
+                          cita.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border-red-200' : 
+                          'bg-blue-100 text-blue-800 border-blue-200'
+                        }`}>
+                          {cita.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {cita.status !== 'CANCELLED' && (
+                          <button onClick={() => handleCancelar(cita.id)} className="text-red-400 hover:text-red-600 transition"><Trash2 size={16} /></button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {citas.length === 0 && !loading && <div className="py-16 text-center text-slate-400 italic">No hay registros.</div>}
+            </div>
+          </section>
+        </main>
       </div>
     </div>
   );

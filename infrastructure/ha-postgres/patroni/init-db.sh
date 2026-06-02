@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS doctores (
     telefono VARCHAR(30),
     correo VARCHAR(120),
     estado VARCHAR(20) NOT NULL DEFAULT 'ACTIVO',
+    max_appointments_per_day INT NOT NULL DEFAULT 10,
     creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
     actualizado_en TIMESTAMP NOT NULL DEFAULT NOW(),
     version BIGINT NOT NULL DEFAULT 0,
@@ -191,7 +192,9 @@ CREATE TABLE IF NOT EXISTS eventos_salientes (
 CREATE TABLE IF NOT EXISTS appointments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     patient_id VARCHAR(80) NOT NULL,
+    patient_name VARCHAR(120),
     doctor_id VARCHAR(80) NOT NULL,
+    doctor_name VARCHAR(120),
     appointment_date TIMESTAMP NOT NULL,
     duration_minutes INT NOT NULL DEFAULT 30,
     consultation_price NUMERIC(12,2) NOT NULL DEFAULT 0.00,
@@ -208,6 +211,12 @@ ADD COLUMN IF NOT EXISTS duration_minutes INT NOT NULL DEFAULT 30;
 
 ALTER TABLE appointments
 ADD COLUMN IF NOT EXISTS consultation_price NUMERIC(12,2) NOT NULL DEFAULT 0.00;
+
+ALTER TABLE appointments
+ADD COLUMN IF NOT EXISTS patient_name VARCHAR(120);
+
+ALTER TABLE appointments
+ADD COLUMN IF NOT EXISTS doctor_name VARCHAR(120);
 
 DO
 \$\$

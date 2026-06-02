@@ -25,6 +25,7 @@ export default function Doctores() {
     specialtyId: '',
     telefono: '',
     correo: '',
+    maxAppointmentsPerDay: 10,
     horarios: [emptySchedule],
   });
 
@@ -32,6 +33,19 @@ export default function Doctores() {
     fetchDoctores();
     fetchEspecialidades();
   }, []);
+
+  const handleToggleStatus = async (id) => {
+    try {
+      setLoading(true);
+      await doctorService.cambiarEstado(id);
+      fetchDoctores();
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'No se pudo cambiar el estado del doctor.' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchDoctores = async () => {
     try {
@@ -178,14 +192,24 @@ export default function Doctores() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700">Correo</label>
+                <label className="block text-sm font-semibold text-slate-700">Citas diarias</label>
                 <input
-                  type="email"
+                  type="number"
+                  min="1"
                   className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:outline-none focus:ring-2 focus:ring-[#2f6f62]/20"
-                  value={form.correo}
-                  onChange={e => setForm({ ...form, correo: e.target.value })}
+                  value={form.maxAppointmentsPerDay}
+                  onChange={e => setForm({ ...form, maxAppointmentsPerDay: parseInt(e.target.value) })}
                 />
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Correo</label>
+              <input
+                type="email"
+                className="mt-2 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-[#2f6f62] focus:outline-none focus:ring-2 focus:ring-[#2f6f62]/20"
+                value={form.correo}
+                onChange={e => setForm({ ...form, correo: e.target.value })}
+              />
             </div>
 
             <div className="space-y-3 border-t border-slate-200 pt-4">
@@ -255,15 +279,28 @@ export default function Doctores() {
           <h3 className="text-lg font-bold text-slate-950">Doctores registrados</h3>
           <div className="grid gap-4">
             {doctores.map(doctor => (
-              <article key={doctor.id} className="rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200">
+              <article key={doctor.id} className={`rounded-md bg-white p-5 shadow-sm ring-1 ring-slate-200 ${!doctor.activo ? 'opacity-60 grayscale' : ''}`}>
                 <div className="flex flex-col justify-between gap-3 sm:flex-row">
                   <div>
-                    <p className="text-lg font-bold text-slate-950">{doctor.nombre}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-bold text-slate-950">{doctor.nombre}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${doctor.activo ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
+                        {doctor.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
                     <p className="text-sm text-[#2f6f62]">
-                      {doctor.specialtyName} · Q {Number(doctor.consultationPrice || 0).toFixed(2)}
+                      {doctor.specialtyName} · Q {Number(doctor.consultationPrice || 0).toFixed(2)} · {doctor.maxAppointmentsPerDay} citas/dia
                     </p>
                   </div>
-                  <p className="font-mono text-xs text-slate-400">ID {doctor.id}</p>
+                  <div className="flex flex-col items-end gap-2">
+                    <p className="font-mono text-xs text-slate-400">ID {doctor.id}</p>
+                    <button 
+                      onClick={() => handleToggleStatus(doctor.id)}
+                      className={`text-xs px-3 py-1 rounded border transition ${doctor.activo ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'}`}
+                    >
+                      {doctor.activo ? 'Desactivar' : 'Activar'}
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   {doctor.horarios?.map(horario => (

@@ -13,6 +13,7 @@ public record DoctorResponse(
         String telefono,
         String correo,
         boolean activo,
+        int maxAppointmentsPerDay,
         List<DoctorHorarioResponse> horarios
 ) {
 }

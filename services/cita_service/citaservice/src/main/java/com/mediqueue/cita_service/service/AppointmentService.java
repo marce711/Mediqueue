@@ -84,6 +84,7 @@ public class AppointmentService {
                 request.appointmentDate(),
                 durationMinutes
         );
+        validateDoctorDailyLimit(request.doctorId(), request.appointmentDate(), doctorValidation.maxAppointmentsPerDay());
         BigDecimal consultationPrice = resolveConsultationPrice(doctorValidation);
         validateAvailability(request.doctorId(), request.patientId(), request.appointmentDate(), durationMinutes);
 
@@ -183,6 +184,20 @@ public class AppointmentService {
     private Appointment getAppointment(UUID id) {
         return appointmentRepository.findById(id)
                 .orElseThrow(() -> new AppointmentNotFoundException(id));
+    }
+
+    private void validateDoctorDailyLimit(String doctorId, LocalDateTime date, int maxDaily) {
+        LocalDateTime startOfDay = date.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = date.toLocalDate().atTime(23, 59, 59);
+        long count = appointmentRepository.countByDoctorIdAndAppointmentDateBetweenAndStatusIn(
+                doctorId.trim(),
+                startOfDay,
+                endOfDay,
+                ACTIVE_STATUSES
+        );
+        if (count >= maxDaily) {
+            throw new AppointmentConflictException("El doctor ya ha alcanzado su limite diario de citas (" + maxDaily + ")");
+        }
     }
 
     private void validateAvailability(String doctorId, String patientId, LocalDateTime appointmentDate, int durationMinutes) {

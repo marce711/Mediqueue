@@ -47,6 +47,9 @@ public class Doctor {
     @Column(name = "estado", nullable = false)
     private String estado = "ACTIVO";
 
+    @Column(name = "max_appointments_per_day", nullable = false)
+    private int maxAppointmentsPerDay = 10;
+
     @Column(name = "creado_en", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -64,6 +67,9 @@ public class Doctor {
         }
         if (updatedAt == null) {
             updatedAt = now;
+        }
+        if (maxAppointmentsPerDay <= 0) {
+            maxAppointmentsPerDay = 10;
         }
     }
 
@@ -118,6 +124,14 @@ public class Doctor {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public int getMaxAppointmentsPerDay() {
+        return maxAppointmentsPerDay;
+    }
+
+    public void setMaxAppointmentsPerDay(int maxAppointmentsPerDay) {
+        this.maxAppointmentsPerDay = maxAppointmentsPerDay;
     }
 
     public boolean isActivo() {

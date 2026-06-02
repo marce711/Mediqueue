@@ -44,9 +44,10 @@ public class DoctorRpcConsumer {
                     .map(doctor -> new DoctorValidationResponse(
                             hasAvailableSchedule && doctor.isActivo(),
                             doctor.getSpecialty().getConsultationPrice(),
-                            doctor.getNombre()
+                            doctor.getNombre(),
+                            doctor.getMaxAppointmentsPerDay()
                     ))
-                    .orElseGet(() -> new DoctorValidationResponse(false, null, null));
+                    .orElseGet(() -> new DoctorValidationResponse(false, null, null, 0));
         } catch (IllegalArgumentException e) {
             logger.error("Formato de doctorId invalido: {}", request.doctorId());
             return new DoctorValidationResponse(false, null, null);

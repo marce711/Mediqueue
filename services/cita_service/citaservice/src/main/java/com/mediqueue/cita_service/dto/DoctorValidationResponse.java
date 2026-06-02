@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record DoctorValidationResponse(
         boolean hasAvailableSchedule,
         BigDecimal consultationPrice,
-        String name
+        String name,
+        int maxAppointmentsPerDay
 ) {
 }

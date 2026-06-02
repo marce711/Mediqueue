@@ -20,6 +20,7 @@ export const doctorService = {
   crear: (data) => api.post('/api/horarios/doctores', data),
   obtenerHorarios: (doctorId) => api.get(`/api/horarios/doctor/${doctorId}`),
   listarEspecialidades: () => api.get('/api/horarios/especialidades'),
+  cambiarEstado: (doctorId) => api.patch(`/api/horarios/doctores/${doctorId}/estado`),
 };
 
 export const citaService = {
