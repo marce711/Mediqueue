@@ -4,7 +4,6 @@ import com.mediqueue.paciente.dto.PacienteRequest;
 import com.mediqueue.paciente.dto.PacienteResponse;
 import com.mediqueue.paciente.service.PacienteService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @Validated
 @RestController
@@ -41,7 +41,7 @@ public class PacienteController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PacienteResponse> obtenerPorId(@PathVariable @Positive Long id) {
+    public ResponseEntity<PacienteResponse> obtenerPorId(@PathVariable UUID id) {
         logger.info("Solicitud recibida para consultar paciente. pacienteId={}", id);
         return ResponseEntity.ok(service.obtenerPorId(id));
     }

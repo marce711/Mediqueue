@@ -1,5 +1,7 @@
 package com.mediqueue.cita_service.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -7,12 +9,16 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class RabbitMQConfig {
@@ -32,9 +38,17 @@ public class RabbitMQConfig {
     @Value("${app.rabbitmq.appointment-cancelled-routing-key}")
     private String appointmentCancelledRoutingKey;
 
+    @Value("${app.rabbitmq.rpc-exchange}")
+    private String rpcExchangeName;
+
     @Bean
     DirectExchange appointmentExchange() {
         return new DirectExchange(exchangeName, true, false);
+    }
+
+    @Bean
+    DirectExchange rpcExchange() {
+        return new DirectExchange(rpcExchangeName, true, false);
     }
 
     @Bean
@@ -106,7 +120,22 @@ public class RabbitMQConfig {
 
     @Bean
     MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        typeMapper.setTrustedPackages("*");
+
+        Map<String, Class<?>> idClassMapping = new HashMap<>();
+        idClassMapping.put("com.mediqueue.paciente.dto.PatientValidationResponse", com.mediqueue.cita_service.dto.PatientValidationResponse.class);
+        idClassMapping.put("com.mediqueue.doctorhorario.dto.DoctorValidationResponse", com.mediqueue.cita_service.dto.DoctorValidationResponse.class);
+        idClassMapping.put("com.mediqueue.paciente.dto.PatientValidationRequest", com.mediqueue.cita_service.dto.PatientValidationRequest.class);
+        idClassMapping.put("com.mediqueue.doctorhorario.dto.DoctorValidationRequest", com.mediqueue.cita_service.dto.DoctorValidationRequest.class);
+
+        typeMapper.setIdClassMapping(idClassMapping);
+        converter.setJavaTypeMapper(typeMapper);
+        return converter;
     }
 
     @Bean

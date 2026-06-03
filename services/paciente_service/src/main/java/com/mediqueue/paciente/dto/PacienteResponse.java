@@ -1,7 +1,9 @@
 package com.mediqueue.paciente.dto;
 
+import java.util.UUID;
+
 public record PacienteResponse(
-        Long id,
+        UUID id,
         String dpi,
         String correo,
         String nombre,

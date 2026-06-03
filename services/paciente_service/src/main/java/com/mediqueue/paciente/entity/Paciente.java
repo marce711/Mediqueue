@@ -1,6 +1,7 @@
 package com.mediqueue.paciente.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -12,8 +13,9 @@ import jakarta.persistence.*;
 public class Paciente {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id_paciente")
+    private UUID id;
 
     @Column(unique = true, nullable = false)
     private String dpi;
@@ -27,17 +29,20 @@ public class Paciente {
     @Column(nullable = false)
     private String telefono;
 
+    @Column(name = "estado", nullable = false)
+    private String estado = "ACTIVO";
+
     // Constructor vacío obligatorio
     public Paciente() {
     }
 
     // Getters y Setters
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -71,5 +76,13 @@ public class Paciente {
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
     }
 }

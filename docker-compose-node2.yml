@@ -1,0 +1,221 @@
+# CONFIGURACIÓN PARA EL NODO 2 (Computadora B)
+# IP: 100.115.210.113
+
+services:
+  etcd:
+    image: public.ecr.aws/bitnami/etcd:3.5
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_NAME=node2
+      - ETCD_ENABLE_V2=true
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://100.115.210.113:2380
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=http://100.115.210.113:2379
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster-mediqueue
+      - ETCD_INITIAL_CLUSTER=node1=http://100.76.170.62:2380,node2=http://100.115.210.113:2380,node3=http://100.99.158.111:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+    volumes:
+      - etcd_data:/bitnami/etcd
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    restart: always
+
+  postgres2:
+    build: ./infrastructure/ha-postgres/patroni
+    environment:
+      - NODE_NAME=postgres2
+      - NODE_IP=100.115.210.113
+      - POSTGRES_PASSWORD=mediqueue123
+      - POSTGRES_APP_PASSWORD=mediqueue123
+      - REPLICATION_PASSWORD=replicator123
+      - PATRONI_ETCD_HOSTS=100.76.170.62:2379,100.115.210.113:2379,100.99.158.111:2379
+      - PATRONI_SCOPE=mediqueue-cluster
+      - PATRONI_NAME=postgres2
+    volumes:
+      - ./infrastructure/ha-postgres/patroni/patroni.yml.template:/home/postgres/patroni.yml.template:ro
+      - postgres2_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+      - "8008:8008"
+    restart: always
+
+  haproxy:
+    image: haproxy:2.8-alpine
+    volumes:
+      - ./infrastructure/ha-postgres/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5000:5432"
+      - "5001:5433"
+      - "7000:7000"
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=MEDIQUEUE_COOKIE
+      - RABBITMQ_USE_LONGNAME=true
+      - RABBITMQ_NODENAME=rabbit@100.115.210.113
+      - RABBITMQ_DEFAULT_USER=mediqueue
+      - RABBITMQ_DEFAULT_PASS=mediqueue123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "4369:4369"
+      - "25672:25672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./infrastructure/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    restart: always
+
+  redis-sentinel:
+    image: bitnami/redis-sentinel:latest
+    environment:
+      - REDIS_SENTINEL_QUORUM=2
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_MASTER_HOST=100.76.170.62
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_SENTINEL_PORT_NUMBER=26379
+      - REDIS_SENTINEL_ANNOUNCE_IP=100.115.210.113
+      - REDIS_SENTINEL_ANNOUNCE_PORT=26379
+    ports:
+      - "26379:26379"
+    restart: always
+
+  cita-service:
+    build: ./services/cita_service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+      - SPRING_DATA_REDIS_SENTINEL_MASTER=mymaster
+      - SPRING_DATA_REDIS_SENTINEL_NODES=100.76.170.62:26379,100.115.210.113:26379,100.99.158.111:26379
+      - PATIENT_SERVICE_URL=http://100.76.170.62:8083
+      - DOCTOR_SERVICE_URL=http://100.115.210.113:8082
+    ports:
+      - "8081:8081"
+    depends_on:
+      - haproxy
+      - rabbitmq
+      - redis-sentinel
+    restart: always
+
+  doctor-horario:
+    build: ./services/doctor_horario
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+    ports:
+      - "8082:8082"
+    depends_on:
+      - haproxy
+      - rabbitmq
+    restart: always
+
+  paciente-service:
+    build: ./services/paciente_service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+    ports:
+      - "8083:8083"
+    depends_on:
+      - haproxy
+      - rabbitmq
+    restart: always
+
+  pago-service:
+    build: ./services/pago_service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://haproxy:5432/mediqueueadmin
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+      - APP_APPOINTMENT_SERVICE_URL=http://cita-service:8081
+    ports:
+      - "8084:8084"
+    depends_on:
+      - haproxy
+      - rabbitmq
+      - cita-service
+    restart: always
+
+  api-gateway:
+    build: ./services/apigateway
+    environment:
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+      - PACIENTE_SERVICE_URL=http://paciente-service:8083
+      - CITA_SERVICE_URL=http://cita-service:8081
+      - DOCTOR_SERVICE_URL=http://doctor-horario:8082
+      - PAGO_SERVICE_URL=http://pago-service:8084
+      - NOTIFICACION_SERVICE_URL=http://notificacion-service:8085
+      - PACIENTE_SERVICE_URLS=http://paciente-service:8083,http://100.76.170.62:8083,http://100.115.210.113:8083,http://100.99.158.111:8083
+      - CITA_SERVICE_URLS=http://cita-service:8081,http://100.115.210.113:8081,http://100.76.170.62:8081,http://100.99.158.111:8081
+      - DOCTOR_SERVICE_URLS=http://doctor-horario:8082,http://100.115.210.113:8082,http://100.76.170.62:8082,http://100.99.158.111:8082
+      - PAGO_SERVICE_URLS=http://pago-service:8084,http://100.99.158.111:8084,http://100.115.210.113:8084,http://100.76.170.62:8084
+      - NOTIFICACION_SERVICE_URLS=http://notificacion-service:8085,http://100.99.158.111:8085,http://100.115.210.113:8085,http://100.76.170.62:8085
+    ports:
+      - "8080:8080"
+    depends_on:
+      - paciente-service
+      - cita-service
+      - doctor-horario
+      - pago-service
+      - notificacion-service
+    restart: always
+
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    restart: always
+
+  notificacion-service:
+    build: ./services/notificacion_service
+    environment:
+      - SPRING_RABBITMQ_ADDRESSES=rabbitmq:5672,100.76.170.62:5672,100.99.158.111:5672
+    ports:
+      - "8085:8085"
+    depends_on:
+      - rabbitmq
+    restart: always
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mediqueue.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - haproxy
+    restart: always
+
+  k6:
+    image: grafana/k6:latest
+    profiles:
+      - tools
+    entrypoint: ["k6"]
+    command: ["version"]
+    working_dir: /workspace
+    environment:
+      - K6_PROMETHEUS_RW_SERVER_URL=http://100.76.170.62:9090/api/v1/write
+      - K6_PROMETHEUS_RW_TREND_STATS=p(95),p(99),avg,min,max
+    volumes:
+      - ./:/workspace
+    restart: "no"
+
+volumes:
+  etcd_data:
+  postgres2_data:
+  rabbitmq_data:
+  pgadmin_data:

@@ -5,7 +5,7 @@ spring:
   application:
     name: cita-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5433/mediqueueadmin}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5000/mediqueueadmin}
     username: ${SPRING_DATASOURCE_USERNAME:mediqueue}
     password: ${SPRING_DATASOURCE_PASSWORD:mediqueue123}
     driver-class-name: org.postgresql.Driver
@@ -26,12 +26,12 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      host: ${SPRING_REDIS_HOST:redis}
-      port: ${SPRING_REDIS_PORT:6379}
+      sentinel:
+        master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:mymaster}
+        nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:100.76.170.62:26379,100.115.210.113:26379,100.99.158.111:26379}
       timeout: 2s
   rabbitmq:
-    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
-    port: ${SPRING_RABBITMQ_PORT:5672}
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:100.76.170.62:5672,100.115.210.113:5672,100.99.158.111:5672}
     username: ${SPRING_RABBITMQ_USERNAME:mediqueue}
     password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
     connection-timeout: 5s
@@ -41,6 +41,22 @@ spring:
       mandatory: true
   cache:
     type: redis
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      dbCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      externalServiceCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+  retry:
+    instances:
+      dbRetry:
+        maxAttempts: 3
+        waitDuration: 2s
 
 management:
   endpoints:
@@ -73,6 +89,9 @@ app:
     appointment-cancelled-queue: mediqueue.appointments.cancelled
     appointment-created-routing-key: appointments.created
     appointment-cancelled-routing-key: appointments.cancelled
+    rpc-exchange: mediqueue.rpc.exchange
+    patient-validation-routing-key: paciente.validate
+    doctor-validation-routing-key: doctor.validate
 
 logging:
   level:

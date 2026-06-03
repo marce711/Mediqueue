@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -30,7 +31,9 @@ import java.util.UUID;
 @Table(
         name = "appointments",
         uniqueConstraints = {
-                @UniqueConstraint(name = "ux_appointments_idempotency_key_jpa", columnNames = "idempotency_key")
+                @UniqueConstraint(name = "ux_appointments_idempotency_key_jpa", columnNames = "idempotency_key"),
+                @UniqueConstraint(name = "ux_appointments_doctor_datetime_jpa", columnNames = {"doctor_id", "appointment_date"}),
+                @UniqueConstraint(name = "ux_appointments_patient_datetime_jpa", columnNames = {"patient_id", "appointment_date"})
         }
 )
 public class Appointment {
@@ -42,11 +45,23 @@ public class Appointment {
     @Column(name = "patient_id", nullable = false, length = 80)
     private String patientId;
 
+    @Column(name = "patient_name", length = 120)
+    private String patientName;
+
     @Column(name = "doctor_id", nullable = false, length = 80)
     private String doctorId;
 
+    @Column(name = "doctor_name", length = 120)
+    private String doctorName;
+
     @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;
+
+    @Column(name = "duration_minutes", nullable = false)
+    private Integer durationMinutes;
+
+    @Column(name = "consultation_price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal consultationPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -68,6 +83,12 @@ public class Appointment {
     void prePersist() {
         if (status == null) {
             status = AppointmentStatus.PENDING;
+        }
+        if (durationMinutes == null) {
+            durationMinutes = 30;
+        }
+        if (consultationPrice == null) {
+            consultationPrice = BigDecimal.ZERO;
         }
         LocalDateTime now = LocalDateTime.now();
         if (createdAt == null) {

@@ -5,41 +5,90 @@ spring:
   application:
     name: api-gateway
 
+  rabbitmq:
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:100.76.170.62:5672,100.115.210.113:5672,100.99.158.111:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:mediqueue}
+    password: ${SPRING_RABBITMQ_PASSWORD:mediqueue123}
+
   cloud:
     gateway:
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 5s
       server:
         webmvc:
           routes:
 
             - id: paciente-service
-              uri: http://paciente-service:8083
+              uri: ${PACIENTE_SERVICE_URL:http://100.76.170.62:8083}
               predicates:
-                - Path=/api/pacientes/**
+                - Path=/api/pacientes,/api/pacientes/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: pacienteCB
+                    fallbackUri: forward:/fallback/paciente
 
             - id: cita-service
-              uri: http://cita-service:8081
+              uri: ${CITA_SERVICE_URL:http://100.115.210.113:8081}
               predicates:
-                - Path=/api/v1/appointments/**
+                - Path=/api/v1/appointments,/api/v1/appointments/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: citaCB
+                    fallbackUri: forward:/fallback/cita
 
             - id: doctor-horario
-              uri: http://doctor-horario:8082
+              uri: ${DOCTOR_SERVICE_URL:http://100.115.210.113:8082}
               predicates:
-                - Path=/api/horarios/**
+                - Path=/api/horarios,/api/horarios/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: doctorCB
+                    fallbackUri: forward:/fallback/doctor
 
             - id: pago-service
-              uri: http://pago-service:8084
+              uri: ${PAGO_SERVICE_URL:http://100.99.158.111:8084}
               predicates:
-                - Path=/api/payments/**
-
-            - id: pago-service-legacy
-              uri: http://pago-service:8084
-              predicates:
-                - Path=/payments/**
+                - Path=/api/payments,/api/payments/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: pagoCB
+                    fallbackUri: forward:/fallback/pago
 
             - id: notificacion-service
-              uri: http://notificacion-service:8085
+              uri: ${NOTIFICACION_SERVICE_URL:http://100.99.158.111:8085}
               predicates:
-                - Path=/api/notificaciones/**
+                - Path=/api/notificaciones,/api/notificaciones/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notificacionCB
+                    fallbackUri: forward:/fallback/notificacion
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      pacienteCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+      citaCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+      doctorCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+      pagoCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+      notificacionCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
 
 management:
   endpoints:

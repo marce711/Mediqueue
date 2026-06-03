@@ -194,5 +194,5 @@ curl http://localhost:8080/api/notificaciones
 - Agregar dashboards Grafana versionados.
 - Agregar circuit breaker formal con Resilience4j para llamadas REST desde `cita_service`.
 - Agregar pruebas de concurrencia para idempotencia de citas y pagos.
-- Evitar `deploy.replicas` como prueba de HA en Compose normal; documentar `--scale` o usar Swarm/Kubernetes.
+- Evitar `deploy.replicas` como prueba de HA en Compose normal; documentar recuperacion manual y `--scale` local cuando aplique.
 - Persistir notificaciones en base propia si se requiere auditoria, porque hoy son memoria del contenedor.

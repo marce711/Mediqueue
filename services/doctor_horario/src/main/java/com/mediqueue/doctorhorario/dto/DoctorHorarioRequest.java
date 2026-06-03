@@ -1,18 +1,16 @@
 package com.mediqueue.doctorhorario.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-
-import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.UUID;
 
 public record DoctorHorarioRequest(
         @NotNull(message = "doctorId es obligatorio")
-        @Positive(message = "doctorId debe ser mayor que cero")
-        Long doctorId,
+        UUID doctorId,
 
-        @NotNull(message = "diaSemana es obligatorio")
-        DayOfWeek diaSemana,
+        @NotBlank(message = "diaSemana es obligatorio")
+        String diaSemana,
 
         @NotNull(message = "horaInicio es obligatoria")
         LocalTime horaInicio,
