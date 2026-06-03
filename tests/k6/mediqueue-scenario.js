@@ -6,8 +6,11 @@ import { Counter, Rate } from 'k6/metrics';
 const DEFAULT_BASE_URL = 'http://localhost:8080';
 const BASE_URL = (__ENV.BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, '');
 const RUN_ID = __ENV.RUN_ID || String(Date.now()).slice(-8);
-const WRITE_RATIO = parseFloat(__ENV.WRITE_RATIO || '0.05');
 const THINK_TIME_SECONDS = parseFloat(__ENV.THINK_TIME_SECONDS || '0');
+const ENDPOINT_SET = (__ENV.ENDPOINT_SET || 'all').toLowerCase();
+const DEFAULT_WRITE_RATIO = ENDPOINT_SET === 'all' ? '0.05' : '0';
+const WRITE_RATIO = parseFloat(__ENV.WRITE_RATIO || DEFAULT_WRITE_RATIO);
+const REQUEST_TIMEOUT = __ENV.REQUEST_TIMEOUT || '';
 
 const endpointCounters = {
   readPacientes: new Counter('mediqueue_read_pacientes_total'),
@@ -23,14 +26,16 @@ const endpointCounters = {
 const successfulResponses = new Rate('mediqueue_successful_responses');
 
 const readEndpoints = [
-  { key: 'readPacientes', method: 'GET', path: '/api/pacientes', name: 'GET /api/pacientes' },
-  { key: 'readDoctores', method: 'GET', path: '/api/horarios/doctores', name: 'GET /api/horarios/doctores' },
-  { key: 'readEspecialidades', method: 'GET', path: '/api/horarios/especialidades', name: 'GET /api/horarios/especialidades' },
-  { key: 'readHorarios', method: 'GET', path: '/api/horarios', name: 'GET /api/horarios' },
-  { key: 'readAppointments', method: 'GET', path: '/api/v1/appointments', name: 'GET /api/v1/appointments' },
-  { key: 'readPayments', method: 'GET', path: '/api/payments', name: 'GET /api/payments' },
-  { key: 'readNotificaciones', method: 'GET', path: '/api/notificaciones', name: 'GET /api/notificaciones' },
+  { key: 'readPacientes', service: 'paciente', method: 'GET', path: '/api/pacientes', name: 'GET /api/pacientes' },
+  { key: 'readDoctores', service: 'doctor', method: 'GET', path: '/api/horarios/doctores', name: 'GET /api/horarios/doctores' },
+  { key: 'readEspecialidades', service: 'doctor', method: 'GET', path: '/api/horarios/especialidades', name: 'GET /api/horarios/especialidades' },
+  { key: 'readHorarios', service: 'doctor', method: 'GET', path: '/api/horarios', name: 'GET /api/horarios' },
+  { key: 'readAppointments', service: 'cita', method: 'GET', path: '/api/v1/appointments', name: 'GET /api/v1/appointments' },
+  { key: 'readPayments', service: 'pago', method: 'GET', path: '/api/payments', name: 'GET /api/payments' },
+  { key: 'readNotificaciones', service: 'notificacion', method: 'GET', path: '/api/notificaciones', name: 'GET /api/notificaciones' },
 ];
+
+const activeReadEndpoints = filterReadEndpoints();
 
 export function makeOptions(totalRequests, defaultVus, profileName) {
   const requests = integerEnv('TARGET_REQUESTS', totalRequests);
@@ -103,9 +108,14 @@ function execute(endpoint) {
     headers: endpoint.headers || {},
     tags: {
       endpoint: endpoint.name,
+      target_service: endpoint.service || 'paciente',
       type: endpoint.method === 'POST' ? 'write' : 'read',
     },
   };
+
+  if (REQUEST_TIMEOUT) {
+    params.timeout = REQUEST_TIMEOUT;
+  }
 
   if (endpoint.method === 'POST') {
     params.headers['Content-Type'] = 'application/json';
@@ -116,7 +126,7 @@ function execute(endpoint) {
 }
 
 function pickReadEndpoint() {
-  return readEndpoints[Math.floor(Math.random() * readEndpoints.length)];
+  return activeReadEndpoints[Math.floor(Math.random() * activeReadEndpoints.length)];
 }
 
 function createPacienteEndpoint() {
@@ -135,6 +145,25 @@ function createPacienteEndpoint() {
       telefono: `55${String(iteration).slice(-6).padStart(6, '0')}`,
     },
   };
+}
+
+function filterReadEndpoints() {
+  switch (ENDPOINT_SET) {
+    case 'doctor-only':
+      return readEndpoints.filter((endpoint) => endpoint.service === 'doctor');
+    case 'no-doctor':
+      return readEndpoints.filter((endpoint) => endpoint.service !== 'doctor');
+    case 'paciente-only':
+      return readEndpoints.filter((endpoint) => endpoint.service === 'paciente');
+    case 'cita-only':
+      return readEndpoints.filter((endpoint) => endpoint.service === 'cita');
+    case 'pago-only':
+      return readEndpoints.filter((endpoint) => endpoint.service === 'pago');
+    case 'notificacion-only':
+      return readEndpoints.filter((endpoint) => endpoint.service === 'notificacion');
+    default:
+      return readEndpoints;
+  }
 }
 
 function integerEnv(name, fallback) {

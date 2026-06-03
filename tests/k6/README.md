@@ -28,6 +28,10 @@ solicitudes, `stress-10000.js` ejecuta 10000, etc.
 - `P99_THRESHOLD_MS`: umbral p99 para `http_req_duration`. Default: `6000`.
 - `DISABLE_LATENCY_THRESHOLDS`: use `true` para no fallar la corrida por
   latencia durante pruebas exploratorias.
+- `ENDPOINT_SET`: filtra endpoints para aislar cuellos. Valores utiles:
+  `all`, `no-doctor`, `doctor-only`, `paciente-only`, `cita-only`,
+  `pago-only`, `notificacion-only`.
+- `REQUEST_TIMEOUT`: timeout por solicitud, por ejemplo `10s` o `30s`.
 
 ## Ejecucion local sin Prometheus
 
@@ -66,6 +70,62 @@ Para una prueba solo lectura:
 ```powershell
 k6 run -e WRITE_RATIO=0 -e BASE_URL=http://100.115.210.113:8080 tests/k6/stress-20000.js
 ```
+
+## Diagnosticar timeouts en /api/horarios
+
+Si aparecen timeouts como:
+
+```text
+Get "http://100.76.170.62:8080/api/horarios": request timeout
+Get "http://100.76.170.62:8080/api/horarios/doctores": request timeout
+Get "http://100.76.170.62:8080/api/horarios/especialidades": request timeout
+```
+
+primero aisle si el cuello esta en `doctor-horario`.
+
+Prueba sin endpoints de doctor:
+
+```powershell
+docker compose -f $compose --profile tools run --rm k6 `
+  run -o experimental-prometheus-rw `
+  --tag testid=stress-10000-no-doctor `
+  -e BASE_URL=$baseUrl `
+  -e ENDPOINT_SET=no-doctor `
+  -e DISABLE_LATENCY_THRESHOLDS=true `
+  tests/k6/stress-10000.js
+```
+
+Prueba solo endpoints de doctor por el gateway:
+
+```powershell
+docker compose -f $compose --profile tools run --rm k6 `
+  run -o experimental-prometheus-rw `
+  --tag testid=stress-10000-doctor-gateway `
+  -e BASE_URL=$baseUrl `
+  -e ENDPOINT_SET=doctor-only `
+  -e DISABLE_LATENCY_THRESHOLDS=true `
+  tests/k6/stress-10000.js
+```
+
+Prueba solo endpoints de doctor directo al microservicio del Nodo A:
+
+```powershell
+docker compose -f $compose --profile tools run --rm k6 `
+  run -o experimental-prometheus-rw `
+  --tag testid=stress-10000-doctor-direct `
+  -e BASE_URL=http://100.76.170.62:8082 `
+  -e ENDPOINT_SET=doctor-only `
+  -e DISABLE_LATENCY_THRESHOLDS=true `
+  tests/k6/stress-10000.js
+```
+
+Interpretacion rapida:
+
+- Si `no-doctor` pasa y `doctor-only` falla, el cuello esta en
+  `doctor-horario` o sus consultas a PostgreSQL.
+- Si `doctor-direct` pasa pero `doctor-gateway` falla, revise el API Gateway.
+- Si `doctor-direct` tambien falla, revise `doctor-horario`, pool JDBC,
+  consultas SQL y PostgreSQL.
 
 ## Interpretar "thresholds crossed"
 
